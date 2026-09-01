@@ -60,10 +60,6 @@ export function HomePage() {
             </Link>
           ))}
         </div>
-
-        <footer className="status-bar">
-          <span>ฐานข้อมูลออฟไลน์ · {appMeta.databaseUpdatedAt}</span>
-        </footer>
       </main>
     </>
   );
