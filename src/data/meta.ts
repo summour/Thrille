@@ -4,9 +4,11 @@
  * (ยังไม่มีการเชื่อมต่อ network ใด ๆ ในโปรเจกต์นี้)
  */
 export const appMeta = {
-  codeTitle: 'ประมวลกฎหมายแพ่งและพาณิชย์',
-  codeShortTitle: 'ป.พ.พ.',
-  tagline: 'ฉบับอ่านบนมือถือ · ใช้งานออฟไลน์ · ข้อมูลอ่านอย่างเดียว',
+  appName: 'Thrille',
+  codeTitle: 'Thrille',
+  codeSubtitle: 'ประมวลกฎหมายแพ่งและพาณิชย์',
+  codeShortTitle: 'Thrille',
+  tagline: 'ประมวลกฎหมายแพ่งและพาณิชย์ · อ่านเตรียมสอบ · ใช้งานออฟไลน์',
   databaseVersion: '0.1.0-mock',
   databaseUpdatedAt: '1 ก.ย. 2569',
 } as const;

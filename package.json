@@ -1,9 +1,9 @@
 {
-  "name": "civil-law-reader",
+  "name": "thrille",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Offline-first reader for the Thai Civil and Commercial Code (UX/UI prototype)",
+  "description": "Thrille — Offline-first reader for the Thai Civil and Commercial Code (UX/UI prototype)",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "tsc --noEmit && vite build",

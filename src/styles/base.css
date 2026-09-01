@@ -4,20 +4,44 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
 html,
 body {
   margin: 0;
   padding: 0;
   background: var(--surface);
+  min-height: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
-  /* ใช้ฟอนต์ในเครื่องเท่านั้น — ไม่มีการโหลดจากภายนอก */
-  font-family: 'Sarabun', 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Leelawadee UI',
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  /* ใช้ฟอนต์ระบบ Apple / Thai ในเครื่อง — รวดเร็วและคมชัด */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+    'Sukhumvit Set', 'Thonburi', 'Sarabun', 'Noto Sans Thai', 'IBM Plex Sans Thai',
+    system-ui, sans-serif;
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* อนุญาตให้ผู้ใช้คัดลอกตัวบทกฎหมายและข้อความเนื้อหาได้ */
+.article-body,
+.article-head,
+.hero,
+.meta-grid,
+.note,
+.empty-state,
+.readonly-note {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 button {
@@ -27,11 +51,13 @@ button {
   border: 0;
   padding: 0;
   cursor: pointer;
+  -webkit-touch-callout: none;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+  -webkit-touch-callout: none;
 }
 
 svg { display: block; }
@@ -46,24 +72,28 @@ mark {
 :focus-visible {
   outline: 2px solid var(--fg);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .app-shell {
   max-width: var(--app-width);
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0 auto;
   background: var(--bg);
-  border-inline: 1px solid var(--line);
+  border-inline: 0.5px solid var(--line);
   display: flex;
   flex-direction: column;
+  position: relative;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 .page {
   flex: 1;
-  padding-bottom: calc(var(--tabbar-height) + 24px);
+  padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px) + 32px);
 }
 
 .page--reader {
-  padding-bottom: 96px;
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 32px);
 }

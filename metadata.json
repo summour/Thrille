@@ -1,6 +1,6 @@
 {
-  "name": "ประมวลกฎหมายแพ่งและพาณิชย์",
-  "description": "เครื่องมืออ่านประมวลกฎหมายแพ่งและพาณิชย์สำหรับเตรียมสอบ ใช้งานออฟไลน์",
+  "name": "Thrille",
+  "description": "Thrille — เครื่องมืออ่านประมวลกฎหมายแพ่งและพาณิชย์สำหรับเตรียมสอบ ใช้งานออฟไลน์",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

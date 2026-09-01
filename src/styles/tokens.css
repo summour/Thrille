@@ -1,33 +1,48 @@
 /**
- * Design tokens — minimal, ขาว-ดำ, contrast สูง
+ * Design tokens — minimal, ขาว-ดำ, contrast สูง, iOS feel
  * แก้ธีมทั้งแอปได้จากไฟล์นี้ไฟล์เดียว
  */
 :root {
   --bg: #ffffff;
+  --bg-blur: rgba(255, 255, 255, 0.82);
+  --dock-bg: rgba(255, 255, 255, 0.84);
+  --dock-border: rgba(0, 0, 0, 0.08);
+  --dock-shadow: 0 12px 36px -6px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --dock-active-bg: rgba(0, 0, 0, 0.06);
   --fg: #111111;
   --muted: #6e6e6e;
   --faint: #9a9a9a;
   --line: #e5e5e5;
   --line-strong: #111111;
-  --surface: #f6f6f6;
+  --surface: #f4f4f6;
+  --surface-active: #e9e9ed;
 
   --reader-size: 18px;
   --reader-line-height: 1.95;
 
   --app-width: 520px;
-  --space-page: 20px;
-  --radius: 10px;
-  --tabbar-height: 62px;
+  --space-page: 18px;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-pill: 9999px;
+  --header-height: 48px;
+  --tabbar-height: 60px;
 }
 
 :root[data-theme='dark'] {
   --bg: #0d0d0d;
+  --bg-blur: rgba(13, 13, 13, 0.82);
+  --dock-bg: rgba(26, 26, 28, 0.86);
+  --dock-border: rgba(255, 255, 255, 0.12);
+  --dock-shadow: 0 14px 40px -6px rgba(0, 0, 0, 0.65), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  --dock-active-bg: rgba(255, 255, 255, 0.1);
   --fg: #f2f2f2;
   --muted: #a0a0a0;
   --faint: #6f6f6f;
   --line: #242424;
   --line-strong: #f2f2f2;
-  --surface: #161616;
+  --surface: #1a1a1c;
+  --surface-active: #262629;
 }
 
 :root[data-font-scale='1'] { --reader-size: 16px; --reader-line-height: 1.85; }
