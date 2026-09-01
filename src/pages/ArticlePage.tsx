@@ -191,6 +191,7 @@ export function ArticlePage() {
     <>
       <PageHeader
         title={`มาตรา ${article.id}`}
+        backTo={node ? routes.node(node.id, resolvedLawId) : routes.toc(resolvedLawId)}
         actions={
           <>
             <button

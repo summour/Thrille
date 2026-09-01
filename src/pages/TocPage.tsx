@@ -17,7 +17,7 @@ export function TocPage() {
 
   return (
     <>
-      <PageHeader title={`สารบัญ ${currentLaw.code}`} showBack />
+      <PageHeader title={`สารบัญ ${currentLaw.code}`} showBack backTo={routes.home} />
       <main className="page">
         <div className="toc-law-header">
           <h1 className="toc-law-header__title">{currentLaw.title}</h1>

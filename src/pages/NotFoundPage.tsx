@@ -9,7 +9,7 @@ interface NotFoundPageProps {
 export function NotFoundPage({ message = 'ไม่พบหน้าที่ต้องการ' }: NotFoundPageProps) {
   return (
     <>
-      <PageHeader title="ไม่พบข้อมูล" />
+      <PageHeader title="ไม่พบข้อมูล" backTo={routes.home} />
       <main className="page">
         <p className="note">{message}</p>
         <p className="note">

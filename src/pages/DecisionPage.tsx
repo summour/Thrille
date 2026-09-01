@@ -13,10 +13,14 @@ export function DecisionPage() {
 
   if (!decision) return <NotFoundPage message="ไม่พบคำพิพากษาที่ระบุ" />;
 
+  const firstArticle = decision.articleIds[0];
+  const backTo = firstArticle ? routes.article(firstArticle) : routes.home;
+
   return (
     <>
       <PageHeader
         title={`ฎีกาที่ ${decision.number}`}
+        backTo={backTo}
         actions={
           <BookmarkButton kind="decision" id={decision.id} addedMessage="บันทึกฎีกาแล้ว" />
         }

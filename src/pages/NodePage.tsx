@@ -1,10 +1,10 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { ArticleRow } from '@/components/ArticleRow';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { NavRow } from '@/components/NavRow';
 import { PageHeader } from '@/layouts/PageHeader';
 import { nodeLabel } from '@/lib/format';
-import { getChildNodes, getNode } from '@/lib/lawIndex';
+import { getChildNodes, getLawIdForNode, getNode } from '@/lib/lawIndex';
 import { routes } from '@/navigation/routes';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -15,16 +15,23 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
  */
 export function NodePage() {
   const { nodeId } = useParams<{ nodeId: string }>();
+  const [searchParams] = useSearchParams();
+  const lawIdParam = searchParams.get('law') || undefined;
   const node = getNode(nodeId);
 
   if (!node) return <NotFoundPage message="ไม่พบหมวดหมู่ที่ระบุ" />;
+
+  const resolvedLawId = getLawIdForNode(node.id) || lawIdParam;
+  const parentBackTo = node.parentId
+    ? routes.node(node.parentId, resolvedLawId)
+    : routes.toc(resolvedLawId);
 
   const children = getChildNodes(node.id);
   const label = nodeLabel(node);
 
   return (
     <>
-      <PageHeader title={label} />
+      <PageHeader title={label} backTo={parentBackTo} />
       <main className="page">
         <Breadcrumbs nodeId={node.id} current={label} excludeLast />
         <h2 className="page-title">{label}</h2>
@@ -36,7 +43,7 @@ export function NodePage() {
               {children.map((child) => (
                 <NavRow
                   key={child.id}
-                  to={routes.node(child.id)}
+                  to={routes.node(child.id, resolvedLawId)}
                   title={nodeLabel(child)}
                   subtitle={
                     child.childIds.length > 0
@@ -56,7 +63,7 @@ export function NodePage() {
             </p>
             <div className="list">
               {node.articleIds.map((articleId) => (
-                <ArticleRow key={articleId} articleId={articleId} />
+                <ArticleRow key={articleId} articleId={articleId} lawId={resolvedLawId} />
               ))}
             </div>
           </>
