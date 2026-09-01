@@ -3,6 +3,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  // GitHub Pages serves this repository under /Thrille/.
+  // Relative asset paths also keep the build portable to other static hosts.
+  base: './',
   plugins: [react()],
   resolve: {
     alias: {
