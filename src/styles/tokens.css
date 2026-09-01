@@ -1,0 +1,35 @@
+/**
+ * Design tokens — minimal, ขาว-ดำ, contrast สูง
+ * แก้ธีมทั้งแอปได้จากไฟล์นี้ไฟล์เดียว
+ */
+:root {
+  --bg: #ffffff;
+  --fg: #111111;
+  --muted: #6e6e6e;
+  --faint: #9a9a9a;
+  --line: #e5e5e5;
+  --line-strong: #111111;
+  --surface: #f6f6f6;
+
+  --reader-size: 18px;
+  --reader-line-height: 1.95;
+
+  --app-width: 520px;
+  --space-page: 20px;
+  --radius: 10px;
+  --tabbar-height: 62px;
+}
+
+:root[data-theme='dark'] {
+  --bg: #0d0d0d;
+  --fg: #f2f2f2;
+  --muted: #a0a0a0;
+  --faint: #6f6f6f;
+  --line: #242424;
+  --line-strong: #f2f2f2;
+  --surface: #161616;
+}
+
+:root[data-font-scale='1'] { --reader-size: 16px; --reader-line-height: 1.85; }
+:root[data-font-scale='2'] { --reader-size: 18px; --reader-line-height: 1.95; }
+:root[data-font-scale='3'] { --reader-size: 21px; --reader-line-height: 2.05; }
