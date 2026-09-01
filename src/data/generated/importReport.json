@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-09-01T10:47:30.114Z",
+  "bookCount": 3,
+  "nodeCount": 55,
+  "articleCount": 487,
+  "issues": [
+    {
+      "level": "warning",
+      "code": "NUMBER_GAP",
+      "message": "เลขมาตราขาดช่วง 453 → 455 (ขาด 1 มาตรา)"
+    }
+  ],
+  "ok": true
+}

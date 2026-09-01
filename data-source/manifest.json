@@ -1,0 +1,40 @@
+{
+  "codeTitle": "ประมวลกฎหมายแพ่งและพาณิชย์",
+  "sources": [
+    {
+      "file": "book1.txt",
+      "scope": "บรรพ 1 หลักทั่วไป",
+      "sourceName": "สำนักงานคณะกรรมการกฤษฎีกา",
+      "sourceUrl": "https://www.krisdika.go.th/",
+      "documentTitle": "ประมวลกฎหมายแพ่งและพาณิชย์ (ฉบับปรับปรุงล่าสุด)",
+      "amendedThrough": "กรอกฉบับแก้ไขล่าสุดที่ปรากฏในเอกสาร",
+      "retrievedAt": "2026-09-01",
+      "retrievedBy": "manual copy-paste",
+      "notes": "คัดลอกด้วยมือจากเอกสารบนเว็บกฤษฎีกา ไม่มีการ scrape อัตโนมัติ"
+    },
+    {
+      "file": "book2.txt",
+      "scope": "บรรพ 2 หนี้",
+      "sourceName": "สำนักงานคณะกรรมการกฤษฎีกา",
+      "sourceUrl": "https://www.krisdika.go.th/",
+      "documentTitle": "ประมวลกฎหมายแพ่งและพาณิชย์ (ฉบับปรับปรุงล่าสุด)",
+      "amendedThrough": "กรอกฉบับแก้ไขล่าสุดที่ปรากฏในเอกสาร",
+      "retrievedAt": "2026-09-01",
+      "retrievedBy": "manual copy-paste",
+      "notes": "คัดลอกด้วยมือจากเอกสารบนเว็บกฤษฎีกา ไม่มีการ scrape อัตโนมัติ"
+    },
+    {
+      "file": "book3.txt",
+      "scope": "บรรพ 3 เอกเทศสัญญา",
+      "sourceName": "สำนักงานคณะกรรมการกฤษฎีกา",
+      "sourceUrl": "https://www.krisdika.go.th/",
+      "documentTitle": "ประมวลกฎหมายแพ่งและพาณิชย์ (ฉบับปรับปรุงล่าสุด)",
+      "amendedThrough": "กรอกฉบับแก้ไขล่าสุดที่ปรากฏในเอกสาร",
+      "retrievedAt": "2026-09-01",
+      "retrievedBy": "manual copy-paste",
+      "notes": "คัดลอกด้วยมือจากเอกสารบนเว็บกฤษฎีกา ไม่มีการ scrape อัตโนมัติ"
+    }
+  ],
+  "lastImportedAt": "2026-09-01",
+  "articleCount": 487
+}
