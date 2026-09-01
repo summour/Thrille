@@ -5,9 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#ffffff" id="theme-color-meta" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d0d0d" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" id="apple-status-bar-meta" />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('clr.theme');
+          var theme = saved ? JSON.parse(saved) : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            var meta = document.getElementById('theme-color-meta');
+            if (meta) meta.setAttribute('content', '#0d0d0d');
+            var appleStatus = document.getElementById('apple-status-bar-meta');
+            if (appleStatus) appleStatus.setAttribute('content', 'black');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <meta name="apple-mobile-web-app-title" content="Thrille" />
     <meta name="format-detection" content="telephone=no" />
     <meta

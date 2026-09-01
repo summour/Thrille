@@ -27,9 +27,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.dataset.fontScale = String(fontScale);
 
     const themeHex = theme === 'dark' ? '#0d0d0d' : '#ffffff';
-    const metaTag = document.getElementById('theme-color-meta') || document.querySelector('meta[name="theme-color"]');
-    if (metaTag) {
-      metaTag.setAttribute('content', themeHex);
+    const metaTags = document.querySelectorAll('meta[name="theme-color"]');
+    metaTags.forEach((tag) => {
+      tag.setAttribute('content', themeHex);
+    });
+
+    const appleStatusMeta = document.getElementById('apple-status-bar-meta') || document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (appleStatusMeta) {
+      appleStatusMeta.setAttribute('content', theme === 'dark' ? 'black' : 'default');
     }
   }, [theme, fontScale]);
 
