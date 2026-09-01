@@ -1,5 +1,7 @@
 import { articles as cccArticles } from '@/data/articles';
 import { codeTree as cccCodeTree } from '@/data/codeTree';
+import { constitutionArticles } from '@/data/constitutionArticles';
+import { constitutionTree } from '@/data/constitutionTree';
 import type { Article, LawCodeMeta, LawNode } from '@/types/law';
 
 export interface LawPackage {
@@ -579,9 +581,28 @@ const crpcArticles: Record<string, Article> = {
 };
 
 /* -------------------------------------------------------------------------- */
+/*                       5. รัฐธรรมนูญแห่งราชอาณาจักรไทย (รธน.)                */
+/* -------------------------------------------------------------------------- */
+const constMeta: LawCodeMeta = {
+  id: 'const',
+  code: 'รธน.',
+  title: 'รัฐธรรมนูญแห่งราชอาณาจักรไทย',
+  shortTitle: 'รธน.',
+  description: 'กฎหมายสูงสุดแห่งราชอาณาจักรไทย กำหนดโครงสร้างอำนาจอธิปไตย สิทธิเสรีภาพ และหน้าที่ของรัฐและประชาชน',
+  unitName: 'หมวด',
+  totalSections: 16,
+  totalArticles: 279,
+};
+
+/* -------------------------------------------------------------------------- */
 /*                       Law Packages Registry                                */
 /* -------------------------------------------------------------------------- */
 export const lawPackages: Record<string, LawPackage> = {
+  const: {
+    meta: constMeta,
+    tree: constitutionTree,
+    articles: constitutionArticles,
+  },
   ccc: {
     meta: cccMeta,
     tree: cccCodeTree,
@@ -606,4 +627,4 @@ export const lawPackages: Record<string, LawPackage> = {
 
 export const defaultLawId = 'ccc';
 
-export const allLawMetas: LawCodeMeta[] = [cccMeta, pcMeta, cpcMeta, crpcMeta];
+export const allLawMetas: LawCodeMeta[] = [constMeta, cccMeta, pcMeta, cpcMeta, crpcMeta];
