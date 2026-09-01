@@ -26,7 +26,7 @@
   --radius-sm: 8px;
   --radius-pill: 9999px;
   --header-height: 48px;
-  --tabbar-height: 60px;
+  --tabbar-height: 54px;
 }
 
 :root[data-theme='dark'] {

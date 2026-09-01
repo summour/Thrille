@@ -5,7 +5,9 @@ export type IconName =
   | 'bookmark'
   | 'bookmarkFilled'
   | 'chevronLeft'
-  | 'chevronRight';
+  | 'chevronRight'
+  | 'sun'
+  | 'moon';
 
 interface IconProps {
   name: IconName;
@@ -21,6 +23,11 @@ const PATHS: Record<IconName, { d: string; fill?: boolean }[]> = {
   bookmarkFilled: [{ d: 'M6 3h12v18l-6-4.5L6 21z', fill: true }],
   chevronLeft: [{ d: 'M15 18l-6-6 6-6' }],
   chevronRight: [{ d: 'M9 18l6-6-6-6' }],
+  sun: [
+    { d: 'M12 3v2M12 19v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42' },
+    { d: 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z' },
+  ],
+  moon: [{ d: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z' }],
 };
 
 export function Icon({ name, size = 20, className }: IconProps) {

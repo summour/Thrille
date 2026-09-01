@@ -20,9 +20,15 @@ export function TabBar() {
   return (
     <nav className="tabbar" aria-label="เมนูหลัก">
       {TABS.map((tab) => (
-        <NavLink key={tab.to} to={tab.to} end={tab.end} className="tabbar__item">
-          <Icon name={tab.icon} size={20} />
-          <span>{tab.label}</span>
+        <NavLink
+          key={tab.to}
+          to={tab.to}
+          end={tab.end}
+          className="tabbar__item"
+          aria-label={tab.label}
+          title={tab.label}
+        >
+          <Icon name={tab.icon} size={22} />
         </NavLink>
       ))}
     </nav>

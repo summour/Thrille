@@ -85,14 +85,10 @@
 }
 .tabbar__item {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
   height: 100%;
-  padding: 4px 0;
   border-radius: var(--radius-pill);
-  font-size: 10.5px;
   color: var(--faint);
   transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
