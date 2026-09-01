@@ -63,7 +63,7 @@ export function MiniAudioPlayer() {
         </span>
         <div className="mini-player__text">
           <span className="mini-player__title">
-            {speechState.isPlaying ? 'กำลังอ่าน' : 'พักชั่วคราว'} มาตรา {speechState.currentArticleId}
+            ม.{speechState.currentArticleId}
           </span>
           <span className="mini-player__law">{law.code}</span>
         </div>
