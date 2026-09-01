@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { BookmarkButton } from '@/components/BookmarkButton';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
@@ -16,7 +16,9 @@ import {
   getDecisionsForArticle,
   getLawIdForArticle,
   getLawMeta,
+  getNodePath,
 } from '@/lib/lawIndex';
+import { buildArticleSpeechScript, speechReader } from '@/lib/speech';
 import { routes } from '@/navigation/routes';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { useLibrary } from '@/store/LibraryContext';
@@ -33,7 +35,7 @@ export function ArticlePage() {
   const law = getLawMeta(resolvedLawId);
   const article = getArticle(articleId, resolvedLawId);
 
-  const { markAsRead } = useLibrary();
+  const { markAsRead, toggleBookmark } = useLibrary();
   const { cycleFontScale, fontScaleLabel } = useTheme();
   const { showToast } = useToast();
 
@@ -42,12 +44,80 @@ export function ArticlePage() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null);
 
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechRate, setSpeechRate] = useState(speechReader.getRate());
+
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null);
   const isHorizontalSwipeRef = useRef(false);
   const isVerticalScrollRef = useRef(false);
 
   useEffect(() => {
+    const unsubscribe = speechReader.subscribe((playing, rate) => {
+      setIsSpeaking(playing);
+      setSpeechRate(rate);
+    });
+    return () => {
+      unsubscribe();
+      speechReader.stop();
+    };
+  }, []);
+
+  const handleDoubleTap = () => {
+    if (!article) return;
+    toggleBookmark('article', article.id);
+  };
+
+  const node = article ? getArticleNode(article.id, resolvedLawId) : undefined;
+  const decisions = article ? getDecisionsForArticle(article.id) : [];
+  const { previous, next } = article
+    ? getAdjacentArticleIds(article.id, resolvedLawId)
+    : { previous: undefined, next: undefined };
+
+  const startSpeakingCurrentArticle = useCallback(() => {
+    if (!article) return;
+    const ancestors = node ? getNodePath(node.id) : [];
+    const breadcrumbNames = ancestors.map((a) => {
+      const prefix = a.type === 'ส่วน' ? 'ส่วนที่' : a.type;
+      return `${prefix} ${a.number} ${a.title}`.trim();
+    });
+
+    const script = buildArticleSpeechScript({
+      lawTitle: law.title,
+      articleId: article.id,
+      contextBreadcrumbs: breadcrumbNames,
+      paragraphs: article.paragraphs,
+    });
+
+    speechReader.speak(script, () => {
+      // When finished reading this article, if autoPlay continuous mode is active and there's a next article
+      if (speechReader.isAutoPlay()) {
+        const adjacent = getAdjacentArticleIds(article.id, resolvedLawId);
+        if (adjacent.next) {
+          navigate(routes.article(adjacent.next, resolvedLawId));
+        } else {
+          speechReader.setAutoPlay(false);
+        }
+      }
+    });
+  }, [article, node, law.title, resolvedLawId, navigate]);
+
+  // If user navigated while auto-play is active, automatically speak the new article
+  useEffect(() => {
+    if (article && speechReader.isAutoPlay()) {
+      const timer = setTimeout(() => {
+        startSpeakingCurrentArticle();
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [article, startSpeakingCurrentArticle]);
+
+  useEffect(() => {
     if (article) markAsRead(article.id);
+    // If not in continuous autoplay mode, stop speaking when article changes
+    if (!speechReader.isAutoPlay()) {
+      speechReader.stop();
+    }
     // Reset swipe state when article changes
     setDragX(0);
     setIsDragging(false);
@@ -59,16 +129,16 @@ export function ArticlePage() {
   // Keyboard navigation for desktop: Left arrow (prev), Right arrow (next)
   useEffect(() => {
     if (!article) return;
-    const { previous, next } = getAdjacentArticleIds(article.id, resolvedLawId);
+    const { previous: prevArt, next: nextArt } = getAdjacentArticleIds(article.id, resolvedLawId);
 
     const onKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if user is focused on an input/search
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
 
-      if (e.key === 'ArrowLeft' && previous) {
-        navigate(routes.article(previous, resolvedLawId));
-      } else if (e.key === 'ArrowRight' && next) {
-        navigate(routes.article(next, resolvedLawId));
+      if (e.key === 'ArrowLeft' && prevArt) {
+        navigate(routes.article(prevArt, resolvedLawId));
+      } else if (e.key === 'ArrowRight' && nextArt) {
+        navigate(routes.article(nextArt, resolvedLawId));
       }
     };
 
@@ -78,13 +148,26 @@ export function ArticlePage() {
 
   if (!article) return <NotFoundPage message={`ไม่พบมาตรา ${articleId} ในฐานข้อมูล`} />;
 
-  const node = getArticleNode(article.id, resolvedLawId);
-  const decisions = getDecisionsForArticle(article.id);
-  const { previous, next } = getAdjacentArticleIds(article.id, resolvedLawId);
-
   const handleFontScale = () => {
     cycleFontScale();
     showToast(`ขนาดตัวอักษร: ${fontScaleLabel}`);
+  };
+
+  const handleToggleSpeech = () => {
+    if (!article) return;
+    if (isSpeaking) {
+      speechReader.setAutoPlay(false);
+      speechReader.stop();
+    } else {
+      speechReader.setAutoPlay(true);
+      startSpeakingCurrentArticle();
+    }
+  };
+
+  const handleCycleSpeechRate = () => {
+    const nextRate = speechRate === 1.0 ? 1.25 : speechRate === 1.25 ? 1.5 : 1.0;
+    speechReader.setRate(nextRate);
+    showToast(`ความเร็วเสียงอ่าน: ${nextRate}x`);
   };
 
   // --- Touch Swipe Handlers ---
@@ -127,7 +210,37 @@ export function ArticlePage() {
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    // Check for double tap if not in swipe or vertical scroll
+    const touchEndPos = e.changedTouches?.[0];
+    const isTap =
+      touchStartRef.current &&
+      !isHorizontalSwipeRef.current &&
+      !isVerticalScrollRef.current &&
+      touchEndPos &&
+      Math.hypot(
+        touchEndPos.clientX - touchStartRef.current.x,
+        touchEndPos.clientY - touchStartRef.current.y,
+      ) < 18;
+
+    if (isTap && touchEndPos) {
+      const now = Date.now();
+      if (
+        lastTapRef.current &&
+        now - lastTapRef.current.time < 320 &&
+        Math.hypot(
+          touchEndPos.clientX - lastTapRef.current.x,
+          touchEndPos.clientY - lastTapRef.current.y,
+        ) < 40
+      ) {
+        // Double tap!
+        handleDoubleTap();
+        lastTapRef.current = null;
+      } else {
+        lastTapRef.current = { time: now, x: touchEndPos.clientX, y: touchEndPos.clientY };
+      }
+    }
+
     if (!touchStartRef.current || isVerticalScrollRef.current || !isHorizontalSwipeRef.current || exitDirection) {
       touchStartRef.current = null;
       isHorizontalSwipeRef.current = false;
@@ -196,6 +309,26 @@ export function ArticlePage() {
           <>
             <button
               type="button"
+              className={`icon-button ${isSpeaking ? 'icon-button--active' : ''}`}
+              onClick={handleToggleSpeech}
+              aria-label={isSpeaking ? 'หยุดอ่าน' : 'อ่านออกเสียงมาตรานี้'}
+              title={isSpeaking ? 'หยุดอ่าน' : 'อ่านออกเสียงมาตรานี้'}
+            >
+              <Icon name={isSpeaking ? 'volume' : 'volumeOff'} size={20} />
+            </button>
+            {isSpeaking && (
+              <button
+                type="button"
+                className="icon-button icon-button--text"
+                onClick={handleCycleSpeechRate}
+                aria-label={`ความเร็วเสียงอ่าน ${speechRate} เท่า`}
+                style={{ fontSize: '12px', fontWeight: 600 }}
+              >
+                {speechRate}x
+              </button>
+            )}
+            <button
+              type="button"
               className="icon-button icon-button--text"
               onClick={handleFontScale}
               aria-label="ปรับขนาดตัวอักษร"
@@ -217,6 +350,7 @@ export function ArticlePage() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
+        onDoubleClick={handleDoubleTap}
       >
         <div
           className={`swipe-card-wrapper ${isAnimating ? 'is-animating' : ''} ${

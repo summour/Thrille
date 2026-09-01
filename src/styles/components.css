@@ -59,6 +59,9 @@
   font-size: 14px;
   font-weight: 700;
 }
+.icon-button--active {
+  background: var(--line-light);
+}
 
 /* ---------------------------------- TabBar (Floating Dock) ---------------- */
 .tabbar {

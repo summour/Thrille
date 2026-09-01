@@ -6,6 +6,8 @@ export type IconName =
   | 'bookmarkFilled'
   | 'chevronLeft'
   | 'chevronRight'
+  | 'volume'
+  | 'volumeOff'
   | 'sun'
   | 'moon';
 
@@ -23,6 +25,16 @@ const PATHS: Record<IconName, { d: string; fill?: boolean }[]> = {
   bookmarkFilled: [{ d: 'M6 3h12v18l-6-4.5L6 21z', fill: true }],
   chevronLeft: [{ d: 'M15 18l-6-6 6-6' }],
   chevronRight: [{ d: 'M9 18l6-6-6-6' }],
+  volume: [
+    { d: 'M11 5L6 9H2v6h4l5 4V5z' },
+    { d: 'M15.54 8.46a5 5 0 0 1 0 7.07' },
+    { d: 'M19.07 4.93a10 10 0 0 1 0 14.14' },
+  ],
+  volumeOff: [
+    { d: 'M11 5L6 9H2v6h4l5 4V5z' },
+    { d: 'M23 9l-6 6' },
+    { d: 'M17 9l6 6' },
+  ],
   sun: [
     { d: 'M12 3v2M12 19v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42' },
     { d: 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z' },
