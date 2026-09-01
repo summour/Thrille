@@ -180,6 +180,13 @@ export function ArticlePage() {
         : 1,
   };
 
+  const activeSwipeDirection: 'prev' | 'next' | null =
+    exitDirection === 'right' || (isDragging && dragX > 20)
+      ? 'prev'
+      : exitDirection === 'left' || (isDragging && dragX < -20)
+      ? 'next'
+      : null;
+
   return (
     <>
       <PageHeader
@@ -202,31 +209,6 @@ export function ArticlePage() {
           </>
         }
       />
-
-      {/* Floating Pill indicator showing target article during swipe */}
-      {isDragging && Math.abs(dragX) > 15 ? (
-        dragX > 0 ? (
-          previous ? (
-            <div className="swipe-indicator is-visible">
-              <Icon name="chevronLeft" size={14} />
-              <span>ก่อนหน้า ม.{previous}</span>
-            </div>
-          ) : (
-            <div className="swipe-indicator is-visible is-disabled">
-              <span>ต้นประมวล</span>
-            </div>
-          )
-        ) : next ? (
-          <div className="swipe-indicator is-visible">
-            <span>ถัดไป ม.{next}</span>
-            <Icon name="chevronRight" size={14} />
-          </div>
-        ) : (
-          <div className="swipe-indicator is-visible is-disabled">
-            <span>ท้ายประมวล</span>
-          </div>
-        )
-      ) : null}
 
       <main
         className="page page--reader"
@@ -302,7 +284,11 @@ export function ArticlePage() {
         </div>
       </main>
 
-      <PrevNextBar previousArticleId={previous} nextArticleId={next} />
+      <PrevNextBar
+        previousArticleId={previous}
+        nextArticleId={next}
+        activeDirection={activeSwipeDirection}
+      />
     </>
   );
 }

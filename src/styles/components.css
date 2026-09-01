@@ -511,40 +511,6 @@
   opacity: 0 !important;
 }
 
-.swipe-indicator {
-  position: fixed;
-  top: calc(var(--header-height) + env(safe-area-inset-top, 0px) + 14px);
-  left: 50%;
-  transform: translateX(-50%) scale(0.9);
-  z-index: 40;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  background: var(--fg);
-  color: var(--bg);
-  border-radius: var(--radius-pill);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s ease, transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.swipe-indicator.is-visible {
-  opacity: 1;
-  transform: translateX(-50%) scale(1);
-}
-
-.swipe-indicator.is-disabled {
-  background: var(--surface);
-  color: var(--muted);
-  border: 1px solid var(--line);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-}
-
 /* --------------------------------- PrevNext (Floating Reader Bar) ---------- */
 .prevnext {
   position: fixed;
@@ -577,10 +543,16 @@
   font-size: 13px;
   transition: all 0.14s ease;
 }
-.prevnext__button:active:not(.is-disabled) {
-  background: var(--dock-active-bg);
-  opacity: 0.7;
-  transform: scale(0.96);
+.prevnext__button:active:not(.is-disabled),
+.prevnext__button.is-swipe-active:not(.is-disabled) {
+  background: var(--fg);
+  color: var(--bg);
+  transform: scale(0.97);
+}
+.prevnext__button.is-swipe-active.is-disabled {
+  background: var(--surface);
+  color: var(--muted);
+  opacity: 0.8;
 }
 .prevnext__button--next {
   justify-content: flex-end;
