@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { BookmarkButton } from '@/components/BookmarkButton';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { DecisionRow } from '@/components/DecisionRow';
@@ -14,6 +14,8 @@ import {
   getArticle,
   getArticleNode,
   getDecisionsForArticle,
+  getLawIdForArticle,
+  getLawMeta,
 } from '@/lib/lawIndex';
 import { routes } from '@/navigation/routes';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -23,7 +25,13 @@ import { useToast } from '@/store/ToastContext';
 
 export function ArticlePage() {
   const { articleId = '' } = useParams<{ articleId: string }>();
-  const article = getArticle(articleId);
+  const [searchParams] = useSearchParams();
+  const lawIdParam = searchParams.get('law') || undefined;
+
+  const resolvedLawId = getLawIdForArticle(articleId, lawIdParam);
+  const law = getLawMeta(resolvedLawId);
+  const article = getArticle(articleId, resolvedLawId);
+
   const { markAsRead } = useLibrary();
   const { cycleFontScale, fontScaleLabel } = useTheme();
   const { showToast } = useToast();
@@ -34,9 +42,9 @@ export function ArticlePage() {
 
   if (!article) return <NotFoundPage message={`ไม่พบมาตรา ${articleId} ในฐานข้อมูล`} />;
 
-  const node = getArticleNode(article.id);
+  const node = getArticleNode(article.id, resolvedLawId);
   const decisions = getDecisionsForArticle(article.id);
-  const { previous, next } = getAdjacentArticleIds(article.id);
+  const { previous, next } = getAdjacentArticleIds(article.id, resolvedLawId);
 
   const handleFontScale = () => {
     cycleFontScale();
@@ -60,7 +68,7 @@ export function ArticlePage() {
             <BookmarkButton
               kind="article"
               id={article.id}
-              addedMessage={`บันทึกมาตรา ${article.id}`}
+              addedMessage={`บันทึกมาตรา ${article.id} (${law.code})`}
             />
           </>
         }
@@ -70,9 +78,21 @@ export function ArticlePage() {
         {node ? <Breadcrumbs nodeId={node.id} current={`มาตรา ${article.id}`} /> : null}
 
         <div className="article-head">
-          <p className="article-number">มาตรา {article.id}</p>
+          <p className="article-number">
+            มาตรา {article.id}
+            <span
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--muted)',
+                marginLeft: '8px',
+              }}
+            >
+              {law.code}
+            </span>
+          </p>
           {node ? (
-            <Link to={routes.node(node.id)} className="article-location">
+            <Link to={routes.node(node.id, resolvedLawId)} className="article-location">
               {nodeLabel(node)}
               <Icon name="chevronRight" size={13} />
             </Link>

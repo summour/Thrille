@@ -6,7 +6,7 @@ import { FilterChips } from '@/components/FilterChips';
 import { Highlight } from '@/components/Highlight';
 import { PageHeader } from '@/layouts/PageHeader';
 import { nodeLabel, nodeShortLabel } from '@/lib/format';
-import { getNodePath } from '@/lib/lawIndex';
+import { getLawIdForNode, getLawMeta, getNodePath } from '@/lib/lawIndex';
 import { searchAll, type SearchScope } from '@/lib/search';
 import { routes } from '@/navigation/routes';
 
@@ -54,7 +54,7 @@ export function SearchPage() {
         onChange={setScope}
         options={[
           { value: 'all', label: 'ทั้งหมด' },
-          { value: 'article', label: `มาตรา${trimmed ? ` ${results.articleIds.length}` : ''}` },
+          { value: 'article', label: `มาตรา${trimmed ? ` ${results.articleItems.length}` : ''}` },
           { value: 'decision', label: `ฎีกา${trimmed ? ` ${results.decisions.length}` : ''}` },
           { value: 'node', label: `สารบัญ${trimmed ? ` ${results.nodes.length}` : ''}` },
         ]}
@@ -65,11 +65,11 @@ export function SearchPage() {
           <p className="note note--hint">
             ค้นหาได้จาก
             <br />
-            <b>เลขมาตรา</b> เช่น 150
+            <b>เลขมาตรา</b> เช่น 150, 288, 55
             <br />
-            <b>คำสำคัญในตัวบท</b> เช่น สุจริต, โมฆะ
+            <b>คำสำคัญในตัวบท</b> เช่น สุจริต, โมฆะ, เจตนา, ฟ้องร้อง
             <br />
-            <b>ชื่อหมวด/ส่วน</b> เช่น นิติกรรม, ซื้อขาย
+            <b>ชื่อหมวด/ส่วน</b> เช่น นิติกรรม, ซื้อขาย, ความผิดเกี่ยวกับชีวิต
             <br />
             <b>เลขฎีกา</b> เช่น 1234/2565
           </p>
@@ -77,12 +77,18 @@ export function SearchPage() {
           <p className="note">ไม่พบผลลัพธ์สำหรับ “{trimmed}”</p>
         ) : (
           <>
-            {show('article') && results.articleIds.length > 0 && (
+            {show('article') && results.articleItems.length > 0 && (
               <>
-                <p className="eyebrow">มาตรา · {results.articleIds.length}</p>
+                <p className="eyebrow">มาตรา · {results.articleItems.length}</p>
                 <div className="list">
-                  {results.articleIds.map((articleId) => (
-                    <ArticleRow key={articleId} articleId={articleId} query={trimmed} />
+                  {results.articleItems.map((item) => (
+                    <ArticleRow
+                      key={`${item.lawId}-${item.id}`}
+                      articleId={item.id}
+                      lawId={item.lawId}
+                      showLawCode
+                      query={trimmed}
+                    />
                   ))}
                 </div>
               </>
@@ -105,16 +111,30 @@ export function SearchPage() {
                 <div className="list">
                   {results.nodes.map((node) => {
                     const parents = getNodePath(node.id).slice(0, -1);
+                    const lawId = getLawIdForNode(node.id);
+                    const law = getLawMeta(lawId);
+
                     return (
                       <div className="row" key={node.id}>
-                        <Link to={routes.node(node.id)} className="row__main">
+                        <Link to={routes.node(node.id, lawId)} className="row__main">
                           <span className="row__title">
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                color: 'var(--muted)',
+                                marginRight: '6px',
+                              }}
+                            >
+                              [{law.code}]
+                            </span>
                             <Highlight text={nodeLabel(node)} query={trimmed} />
                           </span>
                           <span className="row__subtitle">
                             {parents.length > 0
                               ? parents.map(nodeShortLabel).join(' / ')
-                              : 'ระดับบนสุด'}
+                              : `${law.title} (ระดับบนสุด)`}
                           </span>
                         </Link>
                       </div>

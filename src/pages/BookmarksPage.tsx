@@ -35,7 +35,7 @@ export function BookmarksPage() {
           bookmarkedArticleIds.length > 0 ? (
             <div className="list">
               {bookmarkedArticleIds.map((articleId) => (
-                <ArticleRow key={articleId} articleId={articleId} />
+                <ArticleRow key={articleId} articleId={articleId} showLawCode />
               ))}
             </div>
           ) : (

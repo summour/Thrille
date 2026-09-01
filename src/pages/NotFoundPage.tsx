@@ -13,7 +13,7 @@ export function NotFoundPage({ message = 'ไม่พบหน้าที่�
       <main className="page">
         <p className="note">{message}</p>
         <p className="note">
-          <Link to={routes.toc}>กลับไปที่สารบัญกฎหมาย</Link>
+          <Link to={routes.toc()}>กลับไปที่สารบัญกฎหมาย</Link>
         </p>
       </main>
     </>

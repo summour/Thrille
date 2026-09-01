@@ -4,7 +4,6 @@ import { routes } from '@/navigation/routes';
 
 const TABS = [
   { to: routes.home, label: 'หน้าแรก', icon: 'home' as const, end: true },
-  { to: routes.toc, label: 'สารบัญ', icon: 'list' as const, end: false },
   { to: routes.search(), label: 'ค้นหา', icon: 'search' as const, end: false },
   { to: routes.bookmarks, label: 'บันทึก', icon: 'bookmark' as const, end: false },
 ];

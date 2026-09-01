@@ -1,19 +1,18 @@
 import { Link } from 'react-router-dom';
 import { Icon } from '@/components/Icon';
 import { appMeta } from '@/data/meta';
-import { libraryStats } from '@/lib/lawIndex';
+import { getAllLaws } from '@/lib/lawIndex';
 import { routes } from '@/navigation/routes';
-import { useLibrary } from '@/store/LibraryContext';
 import { useTheme } from '@/store/ThemeContext';
 
 export function HomePage() {
-  const { bookmarkedArticleIds, bookmarkedDecisionIds } = useLibrary();
   const { theme, toggleTheme } = useTheme();
+  const laws = getAllLaws();
 
   return (
     <>
       <header className="page-header">
-        <span className="page-header__brand">{appMeta.codeShortTitle}</span>
+        <span className="page-header__brand">{appMeta.appName}</span>
         <div className="page-header__actions">
           <button
             type="button"
@@ -35,20 +34,36 @@ export function HomePage() {
           <span>ค้นหามาตรา / คำสำคัญ / เลขฎีกา</span>
         </Link>
 
-        <nav className="quick-links" aria-label="ทางลัด">
-          <Link to={routes.toc}>
-            <span className="quick-links__title">สารบัญกฎหมาย</span>
-            <span className="quick-links__meta">
-              {libraryStats.bookCount} บรรพ · {libraryStats.articleCount} มาตรา
-            </span>
-          </Link>
-          <Link to={routes.bookmarks}>
-            <span className="quick-links__title">ที่บันทึกไว้</span>
-            <span className="quick-links__meta">
-              {bookmarkedArticleIds.length} มาตรา · {bookmarkedDecisionIds.length} ฎีกา
-            </span>
-          </Link>
-        </nav>
+        <p className="eyebrow">ประมวลกฎหมาย</p>
+
+        <div className="law-box-list" role="list">
+          {laws.map((law) => (
+            <Link
+              key={law.id}
+              to={routes.toc(law.id)}
+              className="law-box"
+              role="listitem"
+            >
+              <div className="law-box__main">
+                <div className="law-box__top">
+                  <span className="law-box__badge">{law.code}</span>
+                  <span className="law-box__title">{law.title}</span>
+                </div>
+                <p className="law-box__desc">{law.description}</p>
+                <div className="law-box__meta">
+                  {law.totalSections} {law.unitName} · {law.totalArticles.toLocaleString('th-TH')} มาตรา
+                </div>
+              </div>
+              <div className="law-box__arrow">
+                <Icon name="chevronRight" size={18} />
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        <footer className="status-bar">
+          <span>ฐานข้อมูลออฟไลน์ · {appMeta.databaseUpdatedAt}</span>
+        </footer>
       </main>
     </>
   );
