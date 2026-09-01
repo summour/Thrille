@@ -485,6 +485,66 @@
   color: var(--faint);
 }
 
+/* --------------------------------- Swipeable Reader ------------------------ */
+.swipe-card-wrapper {
+  position: relative;
+  width: 100%;
+  touch-action: pan-y;
+  will-change: transform, opacity;
+  transform-origin: 50% 120%;
+  user-select: auto;
+}
+
+.swipe-card-wrapper.is-animating {
+  transition: transform 0.24s cubic-bezier(0.18, 0.89, 0.32, 1.1), opacity 0.22s ease;
+}
+
+.swipe-card-wrapper.is-exiting-left {
+  transition: transform 0.18s cubic-bezier(0.4, 0, 1, 1), opacity 0.18s ease;
+  transform: translateX(-120%) rotate(-12deg) !important;
+  opacity: 0 !important;
+}
+
+.swipe-card-wrapper.is-exiting-right {
+  transition: transform 0.18s cubic-bezier(0.4, 0, 1, 1), opacity 0.18s ease;
+  transform: translateX(120%) rotate(12deg) !important;
+  opacity: 0 !important;
+}
+
+.swipe-indicator {
+  position: fixed;
+  top: calc(var(--header-height) + env(safe-area-inset-top, 0px) + 14px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: var(--fg);
+  color: var(--bg);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.swipe-indicator.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+.swipe-indicator.is-disabled {
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
 /* --------------------------------- PrevNext (Floating Reader Bar) ---------- */
 .prevnext {
   position: fixed;

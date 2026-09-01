@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { BookmarkButton } from '@/components/BookmarkButton';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { DecisionRow } from '@/components/DecisionRow';
@@ -27,6 +27,7 @@ export function ArticlePage() {
   const { articleId = '' } = useParams<{ articleId: string }>();
   const [searchParams] = useSearchParams();
   const lawIdParam = searchParams.get('law') || undefined;
+  const navigate = useNavigate();
 
   const resolvedLawId = getLawIdForArticle(articleId, lawIdParam);
   const law = getLawMeta(resolvedLawId);
@@ -36,9 +37,44 @@ export function ArticlePage() {
   const { cycleFontScale, fontScaleLabel } = useTheme();
   const { showToast } = useToast();
 
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null);
+
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const isHorizontalSwipeRef = useRef(false);
+  const isVerticalScrollRef = useRef(false);
+
   useEffect(() => {
     if (article) markAsRead(article.id);
+    // Reset swipe state when article changes
+    setDragX(0);
+    setIsDragging(false);
+    setIsAnimating(false);
+    setExitDirection(null);
+    window.scrollTo({ top: 0 });
   }, [article, markAsRead]);
+
+  // Keyboard navigation for desktop: Left arrow (prev), Right arrow (next)
+  useEffect(() => {
+    if (!article) return;
+    const { previous, next } = getAdjacentArticleIds(article.id, resolvedLawId);
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is focused on an input/search
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+
+      if (e.key === 'ArrowLeft' && previous) {
+        navigate(routes.article(previous, resolvedLawId));
+      } else if (e.key === 'ArrowRight' && next) {
+        navigate(routes.article(next, resolvedLawId));
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [article, resolvedLawId, navigate]);
 
   if (!article) return <NotFoundPage message={`ไม่พบมาตรา ${articleId} ในฐานข้อมูล`} />;
 
@@ -49,6 +85,99 @@ export function ArticlePage() {
   const handleFontScale = () => {
     cycleFontScale();
     showToast(`ขนาดตัวอักษร: ${fontScaleLabel}`);
+  };
+
+  // --- Touch Swipe Handlers ---
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (exitDirection) return;
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+    isHorizontalSwipeRef.current = false;
+    isVerticalScrollRef.current = false;
+    setIsAnimating(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || isVerticalScrollRef.current || exitDirection) return;
+
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStartRef.current.x;
+    const dy = touch.clientY - touchStartRef.current.y;
+
+    if (!isHorizontalSwipeRef.current) {
+      if (Math.abs(dy) > 7 && Math.abs(dy) > Math.abs(dx)) {
+        isVerticalScrollRef.current = true;
+        return;
+      }
+      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+        isHorizontalSwipeRef.current = true;
+        setIsDragging(true);
+      }
+    }
+
+    if (isHorizontalSwipeRef.current) {
+      // Apply rubber-band effect if at start/end of law
+      let effectiveDx = dx;
+      if (dx > 0 && !previous) {
+        effectiveDx = dx * 0.22;
+      } else if (dx < 0 && !next) {
+        effectiveDx = dx * 0.22;
+      }
+      setDragX(effectiveDx);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartRef.current || isVerticalScrollRef.current || !isHorizontalSwipeRef.current || exitDirection) {
+      touchStartRef.current = null;
+      isHorizontalSwipeRef.current = false;
+      isVerticalScrollRef.current = false;
+      return;
+    }
+
+    const elapsed = Date.now() - touchStartRef.current.time;
+    const isQuickFlick = elapsed < 280 && Math.abs(dragX) > 35;
+    const isThresholdPassed = Math.abs(dragX) > 70 || isQuickFlick;
+
+    if (dragX > 0 && isThresholdPassed && previous) {
+      // Swipe Right -> ไปมาตราก่อนหน้า
+      setExitDirection('right');
+      setTimeout(() => {
+        navigate(routes.article(previous, resolvedLawId));
+      }, 150);
+    } else if (dragX < 0 && isThresholdPassed && next) {
+      // Swipe Left -> ไปมาตราถัดไป
+      setExitDirection('left');
+      setTimeout(() => {
+        navigate(routes.article(next, resolvedLawId));
+      }, 150);
+    } else {
+      // Snap back smoothly
+      setIsAnimating(true);
+      setIsDragging(false);
+      setDragX(0);
+    }
+
+    touchStartRef.current = null;
+    isHorizontalSwipeRef.current = false;
+    isVerticalScrollRef.current = false;
+  };
+
+  const cardStyle: React.CSSProperties = {
+    transform:
+      exitDirection === 'left'
+        ? 'translateX(-120%) rotate(-10deg)'
+        : exitDirection === 'right'
+        ? 'translateX(120%) rotate(10deg)'
+        : isDragging || dragX !== 0
+        ? `translateX(${dragX}px) rotate(${dragX * 0.025}deg)`
+        : 'none',
+    opacity:
+      exitDirection
+        ? 0
+        : isDragging && Math.abs(dragX) > 0
+        ? Math.max(0.65, 1 - Math.abs(dragX) / 500)
+        : 1,
   };
 
   return (
@@ -74,61 +203,103 @@ export function ArticlePage() {
         }
       />
 
-      <main className="page page--reader">
-        {node ? <Breadcrumbs nodeId={node.id} current={`มาตรา ${article.id}`} /> : null}
-
-        <div className="article-head">
-          <p className="article-number">
-            มาตรา {article.id}
-            <span
-              style={{
-                fontSize: '12px',
-                fontWeight: 600,
-                color: 'var(--muted)',
-                marginLeft: '8px',
-              }}
-            >
-              {law.code}
-            </span>
-          </p>
-          {node ? (
-            <Link to={routes.node(node.id, resolvedLawId)} className="article-location">
-              {nodeLabel(node)}
-              <Icon name="chevronRight" size={13} />
-            </Link>
-          ) : null}
-        </div>
-
-        <article className="article-body">
-          {article.paragraphs.map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
-          ))}
-          {article.note ? <p className="article-note">{article.note}</p> : null}
-        </article>
-
-        {/* ส่วนฎีกา แยกจากตัวบทด้วยเส้นคั่นหนา เพื่อไม่ให้ผู้ใช้สับสนว่าเป็นตัวบท */}
-        <SectionHeading
-          title="ฎีกาที่เกี่ยวข้อง"
-          meta={decisions.length > 0 ? `${decisions.length} รายการ` : 'ยังไม่มีข้อมูล'}
-          divider
-        />
-        {decisions.length > 0 ? (
-          <div className="list">
-            {decisions.map((decision) => (
-              <DecisionRow key={decision.id} decision={decision} />
-            ))}
+      {/* Floating Pill indicator showing target article during swipe */}
+      {isDragging && Math.abs(dragX) > 15 ? (
+        dragX > 0 ? (
+          previous ? (
+            <div className="swipe-indicator is-visible">
+              <Icon name="chevronLeft" size={14} />
+              <span>ก่อนหน้า ม.{previous}</span>
+            </div>
+          ) : (
+            <div className="swipe-indicator is-visible is-disabled">
+              <span>ต้นประมวล</span>
+            </div>
+          )
+        ) : next ? (
+          <div className="swipe-indicator is-visible">
+            <span>ถัดไป ม.{next}</span>
+            <Icon name="chevronRight" size={14} />
           </div>
         ) : (
-          <EmptyState>
-            ยังไม่มีคำพิพากษาฎีกาที่เชื่อมกับมาตรานี้
-            <br />
-            ส่วนนี้เตรียมไว้สำหรับข้อมูลที่จะเพิ่มในอนาคต
-          </EmptyState>
-        )}
+          <div className="swipe-indicator is-visible is-disabled">
+            <span>ท้ายประมวล</span>
+          </div>
+        )
+      ) : null}
 
-        <p className="readonly-note">
-          ตัวบทกฎหมายและคำพิพากษาเป็นข้อมูลอ่านอย่างเดียว · แก้ไขไม่ได้
-        </p>
+      <main
+        className="page page--reader"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+      >
+        <div
+          className={`swipe-card-wrapper ${isAnimating ? 'is-animating' : ''} ${
+            exitDirection === 'left'
+              ? 'is-exiting-left'
+              : exitDirection === 'right'
+              ? 'is-exiting-right'
+              : ''
+          }`}
+          style={cardStyle}
+        >
+          {node ? <Breadcrumbs nodeId={node.id} current={`มาตรา ${article.id}`} /> : null}
+
+          <div className="article-head">
+            <p className="article-number">
+              มาตรา {article.id}
+              <span
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: 'var(--muted)',
+                  marginLeft: '8px',
+                }}
+              >
+                {law.code}
+              </span>
+            </p>
+            {node ? (
+              <Link to={routes.node(node.id, resolvedLawId)} className="article-location">
+                {nodeLabel(node)}
+                <Icon name="chevronRight" size={13} />
+              </Link>
+            ) : null}
+          </div>
+
+          <article className="article-body">
+            {article.paragraphs.map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+            {article.note ? <p className="article-note">{article.note}</p> : null}
+          </article>
+
+          {/* ส่วนฎีกา แยกจากตัวบทด้วยเส้นคั่นหนา เพื่อไม่ให้ผู้ใช้สับสนว่าเป็นตัวบท */}
+          <SectionHeading
+            title="ฎีกาที่เกี่ยวข้อง"
+            meta={decisions.length > 0 ? `${decisions.length} รายการ` : 'ยังไม่มีข้อมูล'}
+            divider
+          />
+          {decisions.length > 0 ? (
+            <div className="list">
+              {decisions.map((decision) => (
+                <DecisionRow key={decision.id} decision={decision} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState>
+              ยังไม่มีคำพิพากษาฎีกาที่เชื่อมกับมาตรานี้
+              <br />
+              ส่วนนี้เตรียมไว้สำหรับข้อมูลที่จะเพิ่มในอนาคต
+            </EmptyState>
+          )}
+
+          <p className="readonly-note">
+            ตัวบทกฎหมายและคำพิพากษาเป็นข้อมูลอ่านอย่างเดียว · แก้ไขไม่ได้
+          </p>
+        </div>
       </main>
 
       <PrevNextBar previousArticleId={previous} nextArticleId={next} />
