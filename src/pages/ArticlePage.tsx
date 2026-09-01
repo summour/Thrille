@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { BookmarkButton } from '@/components/BookmarkButton';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
@@ -16,9 +16,8 @@ import {
   getDecisionsForArticle,
   getLawIdForArticle,
   getLawMeta,
-  getNodePath,
 } from '@/lib/lawIndex';
-import { buildArticleSpeechScript, speechReader } from '@/lib/speech';
+import { type LawSpeechState, speechReader } from '@/lib/speech';
 import { routes } from '@/navigation/routes';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { useLibrary } from '@/store/LibraryContext';
@@ -44,8 +43,7 @@ export function ArticlePage() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null);
 
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [speechRate, setSpeechRate] = useState(speechReader.getRate());
+  const [speechState, setSpeechState] = useState<LawSpeechState>(speechReader.getState());
 
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null);
@@ -53,15 +51,34 @@ export function ArticlePage() {
   const isVerticalScrollRef = useRef(false);
 
   useEffect(() => {
-    const unsubscribe = speechReader.subscribe((playing, rate) => {
-      setIsSpeaking(playing);
-      setSpeechRate(rate);
+    const unsubscribe = speechReader.subscribe((state) => {
+      setSpeechState(state);
     });
     return () => {
       unsubscribe();
-      speechReader.stop();
     };
   }, []);
+
+  // เมื่อระบบอ่านเบื้องหลังเปลี่ยนไปยังมาตราถัดไป ให้ปรับหน้าจอตามสิ่งที่กำลังอ่าน
+  useEffect(() => {
+    if (
+      speechState.isPlaying &&
+      speechState.currentArticleId &&
+      speechState.currentArticleId !== articleId &&
+      speechState.currentLawId === resolvedLawId
+    ) {
+      navigate(routes.article(speechState.currentArticleId, speechState.currentLawId), {
+        replace: true,
+      });
+    }
+  }, [
+    speechState.isPlaying,
+    speechState.currentArticleId,
+    speechState.currentLawId,
+    articleId,
+    resolvedLawId,
+    navigate,
+  ]);
 
   const handleDoubleTap = () => {
     if (!article) return;
@@ -74,50 +91,11 @@ export function ArticlePage() {
     ? getAdjacentArticleIds(article.id, resolvedLawId)
     : { previous: undefined, next: undefined };
 
-  const startSpeakingCurrentArticle = useCallback(() => {
-    if (!article) return;
-    const ancestors = node ? getNodePath(node.id) : [];
-    const breadcrumbNames = ancestors.map((a) => {
-      const prefix = a.type === 'ส่วน' ? 'ส่วนที่' : a.type;
-      return `${prefix} ${a.number} ${a.title}`.trim();
-    });
-
-    const script = buildArticleSpeechScript({
-      lawTitle: law.title,
-      articleId: article.id,
-      contextBreadcrumbs: breadcrumbNames,
-      paragraphs: article.paragraphs,
-    });
-
-    speechReader.speak(script, () => {
-      // When finished reading this article, if autoPlay continuous mode is active and there's a next article
-      if (speechReader.isAutoPlay()) {
-        const adjacent = getAdjacentArticleIds(article.id, resolvedLawId);
-        if (adjacent.next) {
-          navigate(routes.article(adjacent.next, resolvedLawId));
-        } else {
-          speechReader.setAutoPlay(false);
-        }
-      }
-    });
-  }, [article, node, law.title, resolvedLawId, navigate]);
-
-  // If user navigated while auto-play is active, automatically speak the new article
-  useEffect(() => {
-    if (article && speechReader.isAutoPlay()) {
-      const timer = setTimeout(() => {
-        startSpeakingCurrentArticle();
-      }, 250);
-      return () => clearTimeout(timer);
-    }
-  }, [article, startSpeakingCurrentArticle]);
+  const isSpeakingCurrent =
+    speechState.isPlaying && speechState.currentArticleId === articleId;
 
   useEffect(() => {
     if (article) markAsRead(article.id);
-    // If not in continuous autoplay mode, stop speaking when article changes
-    if (!speechReader.isAutoPlay()) {
-      speechReader.stop();
-    }
     // Reset swipe state when article changes
     setDragX(0);
     setIsDragging(false);
@@ -132,7 +110,6 @@ export function ArticlePage() {
     const { previous: prevArt, next: nextArt } = getAdjacentArticleIds(article.id, resolvedLawId);
 
     const onKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is focused on an input/search
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
 
       if (e.key === 'ArrowLeft' && prevArt) {
@@ -155,19 +132,17 @@ export function ArticlePage() {
 
   const handleToggleSpeech = () => {
     if (!article) return;
-    if (isSpeaking) {
-      speechReader.setAutoPlay(false);
+    if (isSpeakingCurrent) {
       speechReader.stop();
     } else {
       speechReader.setAutoPlay(true);
-      startSpeakingCurrentArticle();
+      speechReader.playArticle(article.id, resolvedLawId);
     }
   };
 
   const handleCycleSpeechRate = () => {
-    const nextRate = speechRate === 1.0 ? 1.25 : speechRate === 1.25 ? 1.5 : 1.0;
+    const nextRate = speechState.rate === 1.0 ? 1.25 : speechState.rate === 1.25 ? 1.5 : 1.0;
     speechReader.setRate(nextRate);
-    showToast(`ความเร็วเสียงอ่าน: ${nextRate}x`);
   };
 
   // --- Touch Swipe Handlers ---
@@ -199,7 +174,6 @@ export function ArticlePage() {
     }
 
     if (isHorizontalSwipeRef.current) {
-      // Apply rubber-band effect if at start/end of law
       let effectiveDx = dx;
       if (dx > 0 && !previous) {
         effectiveDx = dx * 0.22;
@@ -211,7 +185,6 @@ export function ArticlePage() {
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    // Check for double tap if not in swipe or vertical scroll
     const touchEndPos = e.changedTouches?.[0];
     const isTap =
       touchStartRef.current &&
@@ -233,7 +206,6 @@ export function ArticlePage() {
           touchEndPos.clientY - lastTapRef.current.y,
         ) < 40
       ) {
-        // Double tap!
         handleDoubleTap();
         lastTapRef.current = null;
       } else {
@@ -253,19 +225,16 @@ export function ArticlePage() {
     const isThresholdPassed = Math.abs(dragX) > 70 || isQuickFlick;
 
     if (dragX > 0 && isThresholdPassed && previous) {
-      // Swipe Right -> ไปมาตราก่อนหน้า
       setExitDirection('right');
       setTimeout(() => {
         navigate(routes.article(previous, resolvedLawId));
       }, 150);
     } else if (dragX < 0 && isThresholdPassed && next) {
-      // Swipe Left -> ไปมาตราถัดไป
       setExitDirection('left');
       setTimeout(() => {
         navigate(routes.article(next, resolvedLawId));
       }, 150);
     } else {
-      // Snap back smoothly
       setIsAnimating(true);
       setIsDragging(false);
       setDragX(0);
@@ -309,22 +278,22 @@ export function ArticlePage() {
           <>
             <button
               type="button"
-              className={`icon-button ${isSpeaking ? 'icon-button--active' : ''}`}
+              className={`icon-button ${isSpeakingCurrent ? 'icon-button--active' : ''}`}
               onClick={handleToggleSpeech}
-              aria-label={isSpeaking ? 'หยุดอ่าน' : 'อ่านออกเสียงมาตรานี้'}
-              title={isSpeaking ? 'หยุดอ่าน' : 'อ่านออกเสียงมาตรานี้'}
+              aria-label={isSpeakingCurrent ? 'หยุดอ่าน' : 'อ่านออกเสียงมาตรานี้'}
+              title={isSpeakingCurrent ? 'หยุดอ่าน' : 'อ่านออกเสียงมาตรานี้ (เล่นเบื้องหลังได้)'}
             >
-              <Icon name={isSpeaking ? 'volume' : 'volumeOff'} size={20} />
+              <Icon name={isSpeakingCurrent ? 'volume' : 'volumeOff'} size={20} />
             </button>
-            {isSpeaking && (
+            {isSpeakingCurrent && (
               <button
                 type="button"
                 className="icon-button icon-button--text"
                 onClick={handleCycleSpeechRate}
-                aria-label={`ความเร็วเสียงอ่าน ${speechRate} เท่า`}
+                aria-label={`ความเร็วเสียงอ่าน ${speechState.rate} เท่า`}
                 style={{ fontSize: '12px', fontWeight: 600 }}
               >
-                {speechRate}x
+                {speechState.rate}x
               </button>
             )}
             <button
@@ -427,3 +396,4 @@ export function ArticlePage() {
     </>
   );
 }
+
