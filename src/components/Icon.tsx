@@ -8,6 +8,10 @@ export type IconName =
   | 'chevronRight'
   | 'volume'
   | 'volumeOff'
+  | 'play'
+  | 'pause'
+  | 'stop'
+  | 'close'
   | 'sun'
   | 'moon';
 
@@ -34,6 +38,16 @@ const PATHS: Record<IconName, { d: string; fill?: boolean }[]> = {
     { d: 'M11 5L6 9H2v6h4l5 4V5z' },
     { d: 'M23 9l-6 6' },
     { d: 'M17 9l6 6' },
+  ],
+  play: [{ d: 'M6 4l14 8-14 8V4z', fill: true }],
+  pause: [
+    { d: 'M6 4h4v16H6z', fill: true },
+    { d: 'M14 4h4v16h-4z', fill: true },
+  ],
+  stop: [{ d: 'M6 6h12v12H6z', fill: true }],
+  close: [
+    { d: 'M18 6L6 18' },
+    { d: 'M6 6l12 12' },
   ],
   sun: [
     { d: 'M12 3v2M12 19v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42' },
