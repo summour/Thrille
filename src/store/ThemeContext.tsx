@@ -25,6 +25,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.dataset.fontScale = String(fontScale);
+
+    const themeHex = theme === 'dark' ? '#0d0d0d' : '#ffffff';
+    const metaTag = document.getElementById('theme-color-meta') || document.querySelector('meta[name="theme-color"]');
+    if (metaTag) {
+      metaTag.setAttribute('content', themeHex);
+    }
   }, [theme, fontScale]);
 
   const toggleTheme = useCallback(
