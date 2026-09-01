@@ -1,13 +1,15 @@
+import type { LawLevel } from '../../src/types/law';
 import { parseArticleNumber, toArabicDigits, ORDINAL_WORDS } from './thai';
 
 export type Token =
-  | { kind: 'heading'; level: 'บรรพ' | 'ลักษณะ' | 'หมวด' | 'ส่วน'; number: string; title: string; line: number }
+  | { kind: 'heading'; level: LawLevel; number: string; title: string; line: number }
   | { kind: 'article'; id: string; sortKey: [number, number]; firstText: string; line: number }
   | { kind: 'note'; text: string; line: number }
   | { kind: 'text'; text: string; line: number }
   | { kind: 'break'; line: number };
 
 const HEADING_RE = {
+  ข้อความเบื้องต้น: /^ข้อความเบื้องต้น(?:\s*(.*))?$/,
   บรรพ: /^บรรพ\s*([๐-๙\d]+)\s*(.*)$/,
   ลักษณะ: /^ลักษณะ\s*([๐-๙\d]+)\s*(.*)$/,
   หมวด: /^หมวด\s*([๐-๙\d]+)\s*(.*)$/,
@@ -50,8 +52,18 @@ export function tokenize(lines: string[]): Token[] {
       const match = pattern.exec(line);
       if (!match) continue;
 
-      let title = match[2].trim();
-      if (!title) {
+      let number = '';
+      let title = '';
+
+      if (level === 'ข้อความเบื้องต้น') {
+        number = '';
+        title = (match[1] ?? '').trim();
+      } else {
+        number = toArabicDigits(match[1]);
+        title = (match[2] ?? '').trim();
+      }
+
+      if (!title && level !== 'ข้อความเบื้องต้น') {
         const next = lines.slice(i + 1).find((candidate) => candidate.length > 0);
         if (next && !isStructuralLine(next)) {
           title = next;
@@ -62,7 +74,7 @@ export function tokenize(lines: string[]): Token[] {
       tokens.push({
         kind: 'heading',
         level,
-        number: toArabicDigits(match[1]),
+        number,
         title,
         line: lineNo,
       });

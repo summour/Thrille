@@ -33,8 +33,41 @@
       "retrievedAt": "2026-09-01",
       "retrievedBy": "manual copy-paste",
       "notes": "คัดลอกด้วยมือจากเอกสารบนเว็บกฤษฎีกา ไม่มีการ scrape อัตโนมัติ"
+    },
+    {
+      "file": "book4.txt",
+      "scope": "บรรพ 4 ทรัพย์สิน",
+      "sourceName": "สำนักงานคณะกรรมการกฤษฎีกา",
+      "sourceUrl": "https://www.krisdika.go.th/",
+      "documentTitle": "ประมวลกฎหมายแพ่งและพาณิชย์ (ฉบับปรับปรุงล่าสุด)",
+      "amendedThrough": "กรอกฉบับแก้ไขล่าสุดที่ปรากฏในเอกสาร",
+      "retrievedAt": "2026-09-01",
+      "retrievedBy": "manual copy-paste",
+      "notes": "คัดลอกด้วยมือจากเอกสารบนเว็บกฤษฎีกา ไม่มีการ scrape อัตโนมัติ"
+    },
+    {
+      "file": "book5.txt",
+      "scope": "บรรพ 5 ครอบครัว",
+      "sourceName": "สำนักงานคณะกรรมการกฤษฎีกา",
+      "sourceUrl": "https://www.krisdika.go.th/",
+      "documentTitle": "ประมวลกฎหมายแพ่งและพาณิชย์ (ฉบับปรับปรุงล่าสุด)",
+      "amendedThrough": "กรอกฉบับแก้ไขล่าสุดที่ปรากฏในเอกสาร",
+      "retrievedAt": "2026-09-01",
+      "retrievedBy": "manual copy-paste",
+      "notes": "คัดลอกด้วยมือจากเอกสารบนเว็บกฤษฎีกา ไม่มีการ scrape อัตโนมัติ"
+    },
+    {
+      "file": "book6.txt",
+      "scope": "บรรพ 6 มรดก",
+      "sourceName": "สำนักงานคณะกรรมการกฤษฎีกา",
+      "sourceUrl": "https://www.krisdika.go.th/",
+      "documentTitle": "ประมวลกฎหมายแพ่งและพาณิชย์ (ฉบับปรับปรุงล่าสุด)",
+      "amendedThrough": "กรอกฉบับแก้ไขล่าสุดที่ปรากฏในเอกสาร",
+      "retrievedAt": "2026-09-01",
+      "retrievedBy": "manual copy-paste",
+      "notes": "คัดลอกด้วยมือจากเอกสารบนเว็บกฤษฎีกา ไม่มีการ scrape อัตโนมัติ"
     }
   ],
   "lastImportedAt": "2026-09-01",
-  "articleCount": 487
+  "articleCount": 1849
 }

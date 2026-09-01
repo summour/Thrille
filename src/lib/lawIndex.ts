@@ -131,7 +131,7 @@ export function getAllDecisions(): Decision[] {
 
 /** สถิติสั้น ๆ สำหรับหน้าแรก */
 export const libraryStats = {
-  bookCount: rootNodeIds.length,
+  bookCount: rootNodeIds.filter((id) => nodesById.get(id)?.type === 'บรรพ').length,
   articleCount: orderedArticleIds.length,
   decisionCount: decisions.length,
 };

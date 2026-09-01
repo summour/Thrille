@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-09-01T10:47:30.114Z",
-  "bookCount": 3,
-  "nodeCount": 55,
-  "articleCount": 487,
+  "generatedAt": "2026-09-01T12:09:04.635Z",
+  "bookCount": 6,
+  "nodeCount": 217,
+  "articleCount": 1849,
   "issues": [
     {
       "level": "warning",
       "code": "NUMBER_GAP",
-      "message": "เลขมาตราขาดช่วง 453 → 455 (ขาด 1 มาตรา)"
+      "message": "เลขมาตราขาดช่วง 1274 → 1298 (ขาด 23 มาตรา)"
     }
   ],
   "ok": true

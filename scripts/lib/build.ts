@@ -1,3 +1,4 @@
+import type { LawLevel } from '../../src/types/law';
 import type { Token } from './parse';
 
 export interface BuiltArticle {
@@ -9,19 +10,20 @@ export interface BuiltArticle {
 }
 
 export interface BuiltNode {
-  type: 'บรรพ' | 'ลักษณะ' | 'หมวด' | 'ส่วน';
+  type: LawLevel;
   number: string;
   title: string;
   children: BuiltNode[];
   articleIds: string[];
 }
 
-const LEVEL_DEPTH = { บรรพ: 0, ลักษณะ: 1, หมวด: 2, ส่วน: 3 } as const;
-
-export interface BuildOptions {
-  /** 'space' = ต่อบรรทัดด้วยช่องว่าง (ค่าเริ่มต้น), 'none' = ต่อชิดกัน */
-  joinMode: 'space' | 'none';
-}
+const LEVEL_DEPTH: Record<LawLevel, number> = {
+  ข้อความเบื้องต้น: 0,
+  บรรพ: 0,
+  ลักษณะ: 1,
+  หมวด: 2,
+  ส่วน: 3,
+};
 
 export interface BuildResult {
   tree: BuiltNode[];
@@ -31,7 +33,7 @@ export interface BuildResult {
 }
 
 /** ประกอบ token เป็นต้นไม้ + คลังมาตรา */
-export function build(tokens: Token[], options: BuildOptions): BuildResult {
+export function build(tokens: Token[]): BuildResult {
   const tree: BuiltNode[] = [];
   const articles = new Map<string, BuiltArticle>();
   const orphanArticleIds: string[] = [];
@@ -39,25 +41,16 @@ export function build(tokens: Token[], options: BuildOptions): BuildResult {
   /** stack[d] = โหนดที่เปิดอยู่ที่ความลึก d */
   const stack: (BuiltNode | null)[] = [null, null, null, null];
   let currentArticle: BuiltArticle | null = null;
-  let buffer: string[] = [];
-
-  const flushParagraph = () => {
-    if (!currentArticle || buffer.length === 0) return;
-    const joined = buffer.join(options.joinMode === 'space' ? ' ' : '');
-    const text = joined.replace(/\s+/g, ' ').trim();
+  const addParagraph = (raw: string) => {
+    if (!currentArticle) return;
+    const text = raw.replace(/\s+/g, ' ').trim();
     if (text) currentArticle.paragraphs.push(text);
-    buffer = [];
-  };
-
-  const closeArticle = () => {
-    flushParagraph();
-    currentArticle = null;
   };
 
   for (const token of tokens) {
     switch (token.kind) {
       case 'heading': {
-        closeArticle();
+        currentArticle = null;
         const depth = LEVEL_DEPTH[token.level];
         const node: BuiltNode = {
           type: token.level,
@@ -85,8 +78,6 @@ export function build(tokens: Token[], options: BuildOptions): BuildResult {
       }
 
       case 'article': {
-        closeArticle();
-
         const article: BuiltArticle = {
           id: token.id,
           sortKey: token.sortKey,
@@ -95,7 +86,7 @@ export function build(tokens: Token[], options: BuildOptions): BuildResult {
         };
         articles.set(token.id, article);
         currentArticle = article;
-        if (token.firstText) buffer.push(token.firstText);
+        if (token.firstText) addParagraph(token.firstText);
 
         // ผูกกับโหนดที่ลึกที่สุดที่เปิดอยู่
         let owner: BuiltNode | null = null;
@@ -111,7 +102,6 @@ export function build(tokens: Token[], options: BuildOptions): BuildResult {
       }
 
       case 'note': {
-        flushParagraph();
         if (currentArticle) {
           currentArticle.note = currentArticle.note
             ? `${currentArticle.note} · ${token.text}`
@@ -121,17 +111,15 @@ export function build(tokens: Token[], options: BuildOptions): BuildResult {
       }
 
       case 'text': {
-        if (currentArticle) buffer.push(token.text);
+        if (currentArticle) addParagraph(token.text);
         break;
       }
 
       case 'break': {
-        flushParagraph();
         break;
       }
     }
   }
 
-  closeArticle();
   return { tree, articles, orphanArticleIds };
 }

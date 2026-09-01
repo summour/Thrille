@@ -56,7 +56,7 @@ export function validate(result: BuildResult): ImportReport {
         message: `${node.type} ${node.number} ${node.title} ว่างเปล่า`,
       });
     }
-    if (!node.title) {
+    if (!node.title && node.type !== 'ข้อความเบื้องต้น') {
       issues.push({
         level: 'warning',
         code: 'MISSING_TITLE',
@@ -80,7 +80,7 @@ export function validate(result: BuildResult): ImportReport {
 
   return {
     generatedAt: new Date().toISOString(),
-    bookCount: tree.length,
+    bookCount: tree.filter((n) => n.type === 'บรรพ').length,
     nodeCount: nodes.length,
     articleCount: articles.size,
     issues,

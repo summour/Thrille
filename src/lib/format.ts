@@ -1,13 +1,19 @@
 import type { IndexedLawNode } from '@/types/law';
 
-/** ป้ายชื่อโหนด เช่น "บรรพ 1 หลักทั่วไป" / "ส่วนที่ 1 สภาพบุคคล" */
+/** ป้ายชื่อโหนด เช่น "ข้อความเบื้องต้น" / "บรรพ 1 หลักทั่วไป" / "ส่วนที่ 1 สภาพบุคคล" */
 export function nodeLabel(node: Pick<IndexedLawNode, 'type' | 'number' | 'title'>): string {
+  if (node.type === 'ข้อความเบื้องต้น') {
+    return node.title ? `ข้อความเบื้องต้น ${node.title}`.trim() : 'ข้อความเบื้องต้น';
+  }
   const prefix = node.type === 'ส่วน' ? 'ส่วนที่' : node.type;
   return `${prefix} ${node.number} ${node.title}`.trim();
 }
 
-/** ป้ายสั้นสำหรับ breadcrumb เช่น "บรรพ 1" */
+/** ป้ายสั้นสำหรับ breadcrumb เช่น "ข้อความเบื้องต้น" / "บรรพ 1" */
 export function nodeShortLabel(node: Pick<IndexedLawNode, 'type' | 'number'>): string {
+  if (node.type === 'ข้อความเบื้องต้น') {
+    return 'ข้อความเบื้องต้น';
+  }
   return `${node.type} ${node.number}`;
 }
 

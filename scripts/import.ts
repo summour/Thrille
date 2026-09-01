@@ -23,7 +23,6 @@ const MANIFEST = join(ROOT, 'data-source', 'manifest.json');
 
 const args = process.argv.slice(2);
 const checkOnly = args.includes('--check');
-const joinMode = args.includes('--join=none') ? 'none' : 'space';
 
 function main() {
   if (!existsSync(RAW_DIR)) {
@@ -46,7 +45,7 @@ function main() {
   const lines = files.flatMap((name) => cleanLines(readFileSync(join(RAW_DIR, name), 'utf8')));
 
   const tokens = tokenize(lines);
-  const result = build(tokens, { joinMode });
+  const result = build(tokens);
   const report = validate(result);
 
   printReport(report);
