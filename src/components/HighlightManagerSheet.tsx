@@ -7,7 +7,6 @@ import {
   getContrastTextColor,
 } from '@/lib/highlighter';
 import { useHighlight } from '@/store/HighlightContext';
-import { useToast } from '@/store/ToastContext';
 import type { HighlightColor, UnderlineStyle } from '@/types/highlight';
 
 interface HighlightManagerSheetProps {
@@ -45,8 +44,6 @@ export function HighlightManagerSheet({
     removeCustomColor,
     resetToDefaults,
   } = useHighlight();
-
-  const { showToast } = useToast();
 
   const [inputWord, setInputWord] = useState(initialWord);
   const [selectedColor, setSelectedColor] = useState<HighlightColor | null>('yellow');
@@ -93,7 +90,6 @@ export function HighlightManagerSheet({
     if (selectedColor === hex) {
       setSelectedColor('yellow');
     }
-    showToast(`ลบสีเรียบร้อย`);
   };
 
   const handleSelectUnderline = (underline: UnderlineStyle) => {
@@ -122,7 +118,6 @@ export function HighlightManagerSheet({
       addRule(activePreset.id, word, finalColor, finalUnderline);
     }
 
-    showToast(`เพิ่มคำว่า "${word}" เรียบร้อย`);
     setInputWord('');
   };
 
@@ -131,10 +126,9 @@ export function HighlightManagerSheet({
     const name = newPresetName.trim();
     if (!name) return;
 
-    const created = createPreset(name);
+    createPreset(name);
     setIsCreatingPreset(false);
     setNewPresetName('');
-    showToast(`สร้างชุด "${created.name}" เรียบร้อย`);
   };
 
   const handleSaveEditedName = (e: FormEvent) => {
@@ -143,7 +137,6 @@ export function HighlightManagerSheet({
     const name = editNameValue.trim();
     if (name) {
       updatePreset(activePreset.id, { name });
-      showToast(`แก้ไขชื่อชุดเป็น "${name}"`);
     }
     setIsEditingName(false);
   };
@@ -151,9 +144,7 @@ export function HighlightManagerSheet({
   const handleDeleteActivePreset = () => {
     if (!activePreset) return;
     if (window.confirm(`ต้องการลบชุดคำสำคัญ "${activePreset.name}" ใช่หรือไม่?`)) {
-      const name = activePreset.name;
       deletePreset(activePreset.id);
-      showToast(`ลบชุด "${name}" แล้ว`);
     }
   };
 
@@ -271,23 +262,18 @@ export function HighlightManagerSheet({
               </form>
             ) : (
               <div className="sheet-active-title-row">
-                <h3 className="sheet-active-name">{activePreset.name}</h3>
+                <h3 className="sheet-active-name" title={activePreset.name}>
+                  {activePreset.name}
+                </h3>
 
                 <div className="sheet-active-actions">
                   <button
                     type="button"
-                    className={`sheet-small-btn ${
-                      activePreset.enabled !== false
-                        ? 'sheet-small-btn--active'
-                        : 'sheet-small-btn--muted'
+                    className={`sheet-toggle-pill ${
+                      activePreset.enabled !== false ? 'is-active' : 'is-inactive'
                     }`}
                     onClick={() => {
                       togglePresetEnabled(activePreset.id);
-                      showToast(
-                        activePreset.enabled !== false
-                          ? `ปิดใช้งานชุด "${activePreset.name}"`
-                          : `เปิดใช้งานชุด "${activePreset.name}"`,
-                      );
                     }}
                     title={
                       activePreset.enabled !== false
@@ -297,44 +283,48 @@ export function HighlightManagerSheet({
                   >
                     {activePreset.enabled !== false ? (
                       <>
-                        <Icon name="check" size={13} />
-                        เปิดใช้อยู่
+                        <Icon name="check" size={12} />
+                        เปิดใช้
                       </>
                     ) : (
-                      'ปิดใช้อยู่'
+                      'ปิด'
                     )}
                   </button>
+
                   <button
                     type="button"
-                    className="sheet-small-btn"
+                    className="sheet-icon-btn"
                     onClick={() => {
                       setIsEditingName(true);
                       setEditNameValue(activePreset.name);
                     }}
                     title="เปลี่ยนชื่อชุดคำ"
+                    aria-label="เปลี่ยนชื่อชุดคำ"
                   >
-                    <Icon name="edit" size={13} />
-                    แก้ไขชื่อ
+                    <Icon name="edit" size={14} />
                   </button>
+
                   <button
                     type="button"
-                    className="sheet-small-btn"
+                    className="sheet-icon-btn"
                     onClick={() => {
                       duplicatePreset(activePreset.id);
-                      showToast('คัดลอกสำเนาชุดคำแล้ว');
                     }}
-                    title="คัดลอกชุดคำนี้"
+                    title="ทำสำเนาชุดคำนี้"
+                    aria-label="ทำสำเนาชุดคำนี้"
                   >
-                    ทำสำเนา
+                    <Icon name="copy" size={14} />
                   </button>
+
                   {presets.length > 1 && (
                     <button
                       type="button"
-                      className="sheet-small-btn sheet-small-btn--danger"
+                      className="sheet-icon-btn sheet-icon-btn--danger"
                       onClick={handleDeleteActivePreset}
                       title="ลบชุดคำนี้"
+                      aria-label="ลบชุดคำนี้"
                     >
-                      <Icon name="trash" size={13} />
+                      <Icon name="trash" size={14} />
                     </button>
                   )}
                 </div>
@@ -520,7 +510,6 @@ export function HighlightManagerSheet({
                       className="sheet-rule-remove"
                       onClick={() => {
                         removeRule(activePreset.id, rule.id);
-                        showToast(`ลบคำว่า "${rule.word}" แล้ว`);
                       }}
                       aria-label={`ลบคำว่า ${rule.word}`}
                     >
@@ -541,7 +530,6 @@ export function HighlightManagerSheet({
             onClick={() => {
               if (window.confirm('ต้องการคืนค่าชุดคำสำคัญเริ่มต้นทั้งหมดใช่หรือไม่?')) {
                 resetToDefaults();
-                showToast('คืนค่าชุดคำสำคัญเริ่มต้นเรียบร้อย');
               }
             }}
           >
