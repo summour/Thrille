@@ -24,7 +24,6 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
 import { useHighlight } from '@/store/HighlightContext';
 import { useLibrary } from '@/store/LibraryContext';
 import { useTheme } from '@/store/ThemeContext';
-import { useToast } from '@/store/ToastContext';
 
 export function ArticlePage() {
   const { articleId = '' } = useParams<{ articleId: string }>();
@@ -37,8 +36,7 @@ export function ArticlePage() {
   const article = getArticle(articleId, resolvedLawId);
 
   const { markAsRead, toggleBookmark } = useLibrary();
-  const { cycleFontScale, fontScaleLabel } = useTheme();
-  const { showToast } = useToast();
+  const { cycleFontScale } = useTheme();
   const { activeRules, isEnabled } = useHighlight();
 
   const [dragX, setDragX] = useState(0);
@@ -96,7 +94,6 @@ export function ArticlePage() {
 
   const handleFontScale = () => {
     cycleFontScale();
-    showToast(`ขนาดตัวอักษร: ${fontScaleLabel}`);
   };
 
   // --- Touch Swipe Handlers ---
