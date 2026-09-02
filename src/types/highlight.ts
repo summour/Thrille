@@ -1,16 +1,22 @@
+export type PresetHighlightColor = 'yellow' | 'green' | 'blue' | 'pink';
+export type HighlightColor = PresetHighlightColor | string;
+export type UnderlineStyle = 'solid' | 'bold' | 'double';
+
 export type HighlightStyle =
-  | 'yellow'
-  | 'green'
-  | 'blue'
-  | 'pink'
+  | HighlightColor
   | 'underline'
   | 'underline-bold'
-  | 'underline-double';
+  | 'underline-double'
+  | `${PresetHighlightColor}+underline`
+  | `${PresetHighlightColor}+underline-bold`
+  | `${PresetHighlightColor}+underline-double`;
 
 export interface KeywordRule {
   id: string;
   word: string;
-  style: HighlightStyle;
+  color?: HighlightColor | null;
+  underline?: UnderlineStyle | null;
+  style?: HighlightStyle;
 }
 
 export interface KeywordPreset {
@@ -20,3 +26,4 @@ export interface KeywordPreset {
   rules: KeywordRule[];
   createdAt: number;
 }
+

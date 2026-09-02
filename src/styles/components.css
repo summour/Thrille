@@ -817,6 +817,8 @@
   display: inline;
   padding: 1px 3px;
   border-radius: 4px;
+  border-bottom: none;
+  text-decoration: none;
   color: inherit;
   font-weight: 500;
   box-decoration-break: clone;
@@ -825,43 +827,42 @@
 }
 
 .hl--yellow {
-  background-color: #fef08a;
-  color: #713f12;
+  background-color: #ffff00;
+  color: #1a1a00;
 }
 :root[data-theme='dark'] .hl--yellow {
-  background-color: rgba(234, 179, 8, 0.32);
-  color: #fef08a;
+  background-color: rgba(255, 255, 0, 0.38);
+  color: #ffff77;
 }
 
 .hl--green {
-  background-color: #bbf7d0;
-  color: #14532d;
+  background-color: #00ff66;
+  color: #003311;
 }
 :root[data-theme='dark'] .hl--green {
-  background-color: rgba(34, 197, 94, 0.3);
-  color: #bbf7d0;
+  background-color: rgba(0, 255, 102, 0.36);
+  color: #66ffaa;
 }
 
 .hl--blue {
-  background-color: #bfdbfe;
-  color: #1e3a8a;
+  background-color: #00f0ff;
+  color: #002d3a;
 }
 :root[data-theme='dark'] .hl--blue {
-  background-color: rgba(59, 130, 246, 0.32);
-  color: #bfdbfe;
+  background-color: rgba(0, 240, 255, 0.36);
+  color: #80f5ff;
 }
 
 .hl--pink {
-  background-color: #fecdd3;
-  color: #881337;
+  background-color: #ff007f;
+  color: #ffffff;
 }
 :root[data-theme='dark'] .hl--pink {
-  background-color: rgba(244, 63, 94, 0.32);
-  color: #fecdd3;
+  background-color: rgba(255, 0, 127, 0.38);
+  color: #ffa3d1;
 }
 
 .hl--underline {
-  background: transparent;
   text-decoration: underline;
   text-decoration-thickness: 1.5px;
   text-underline-offset: 4px;
@@ -869,7 +870,6 @@
 }
 
 .hl--underline-bold {
-  background: transparent;
   text-decoration: underline;
   text-decoration-thickness: 2.5px;
   text-underline-offset: 4px;
@@ -877,7 +877,6 @@
 }
 
 .hl--underline-double {
-  background: transparent;
   text-decoration: underline double;
   text-decoration-thickness: 1.5px;
   text-underline-offset: 4px;
@@ -1138,39 +1137,165 @@
   white-space: nowrap;
 }
 
-.sheet-style-selector {
+.sheet-style-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 12px;
+  padding: 2px 0 4px;
 }
 
-.sheet-style-label {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.sheet-style-options {
+.sheet-style-group {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
 }
 
-.sheet-style-chip {
-  padding: 3px 8px;
+.sheet-style-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+  margin: 0 2px;
+}
+
+/* Color swatch buttons */
+.sheet-color-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  position: relative;
+  color: #1a1a1a;
+}
+
+.sheet-color-btn:active {
+  transform: scale(0.9);
+}
+
+.sheet-color-btn.is-selected {
+  border-color: var(--fg);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--fg);
+}
+
+.sheet-color-btn--yellow {
+  background-color: #ffff00;
+  color: #000;
+}
+:root[data-theme='dark'] .sheet-color-btn--yellow {
+  background-color: #ffff00;
+  color: #000;
+}
+
+.sheet-color-btn--green {
+  background-color: #00ff66;
+  color: #000;
+}
+:root[data-theme='dark'] .sheet-color-btn--green {
+  background-color: #00ff66;
+  color: #000;
+}
+
+.sheet-color-btn--blue {
+  background-color: #00f0ff;
+  color: #000;
+}
+:root[data-theme='dark'] .sheet-color-btn--blue {
+  background-color: #00f0ff;
+  color: #000;
+}
+
+.sheet-color-btn--pink {
+  background-color: #ff007f;
+  color: #fff;
+}
+:root[data-theme='dark'] .sheet-color-btn--pink {
+  background-color: #ff007f;
+  color: #fff;
+}
+
+/* Color Wheel Picker Button */
+.sheet-color-wheel-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: conic-gradient(
+    #ff0000 0deg,
+    #ff8800 50deg,
+    #ffff00 100deg,
+    #00ff00 150deg,
+    #00ffff 200deg,
+    #0055ff 250deg,
+    #ff00ff 300deg,
+    #ff0000 360deg
+  );
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  flex-shrink: 0;
+}
+
+.sheet-color-wheel-btn:hover {
+  transform: scale(1.06);
+}
+
+.sheet-color-wheel-btn:active {
+  transform: scale(0.9);
+}
+
+.sheet-color-wheel-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  padding: 0;
+  border: none;
+}
+
+.sheet-color-wheel-btn.is-active {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--fg);
+}
+
+/* Underline icon buttons */
+.sheet-line-btn {
+  width: 32px;
+  height: 28px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: var(--surface);
-  font-size: 11.5px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.12s ease;
+  padding: 0;
 }
 
-.sheet-style-chip.is-selected {
+.sheet-line-btn:active {
+  transform: scale(0.92);
+}
+
+.sheet-line-btn.is-selected {
+  background: var(--fg);
   border-color: var(--fg);
-  box-shadow: 0 0 0 1px var(--fg);
+  color: var(--bg);
+}
+
+.sheet-line-btn svg {
+  display: block;
 }
 
 .sheet-rules-section {

@@ -8,7 +8,13 @@ import {
 } from 'react';
 import { DEFAULT_PRESETS } from '@/data/defaultPresets';
 import { useLocalStorage } from '@/store/useLocalStorage';
-import type { HighlightStyle, KeywordPreset, KeywordRule } from '@/types/highlight';
+import type {
+  HighlightColor,
+  HighlightStyle,
+  KeywordPreset,
+  KeywordRule,
+  UnderlineStyle,
+} from '@/types/highlight';
 
 interface HighlightContextValue {
   presets: KeywordPreset[];
@@ -16,6 +22,7 @@ interface HighlightContextValue {
   isEnabled: boolean;
   activePreset: KeywordPreset | null;
   activeRules: KeywordRule[];
+  customColors: string[];
   setIsEnabled: (enabled: boolean) => void;
   toggleEnabled: () => void;
   setActivePresetId: (id: string | null) => void;
@@ -23,9 +30,16 @@ interface HighlightContextValue {
   updatePreset: (id: string, updates: Partial<KeywordPreset>) => void;
   deletePreset: (id: string) => void;
   duplicatePreset: (id: string) => void;
-  addRule: (presetId: string, word: string, style: HighlightStyle) => void;
+  addRule: (
+    presetId: string,
+    word: string,
+    color?: HighlightColor | HighlightStyle | null,
+    underline?: UnderlineStyle | null,
+  ) => void;
   updateRule: (presetId: string, ruleId: string, updates: Partial<KeywordRule>) => void;
   removeRule: (presetId: string, ruleId: string) => void;
+  addCustomColor: (color: string) => void;
+  removeCustomColor: (color: string) => void;
   resetToDefaults: () => void;
 }
 
@@ -34,6 +48,7 @@ const HighlightContext = createContext<HighlightContextValue | undefined>(undefi
 const STORAGE_PRESETS_KEY = 'clr.highlight_presets';
 const STORAGE_ACTIVE_ID_KEY = 'clr.active_preset_id';
 const STORAGE_ENABLED_KEY = 'clr.highlight_enabled';
+const STORAGE_CUSTOM_COLORS_KEY = 'clr.custom_highlight_colors';
 
 export function HighlightProvider({ children }: { children: ReactNode }) {
   const [presets, setPresets] = useLocalStorage<KeywordPreset[]>(
@@ -47,6 +62,10 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
   const [isEnabled, setIsEnabled] = useLocalStorage<boolean>(
     STORAGE_ENABLED_KEY,
     true,
+  );
+  const [customColors, setCustomColors] = useLocalStorage<string[]>(
+    STORAGE_CUSTOM_COLORS_KEY,
+    [],
   );
 
   const activePreset = useMemo(() => {
@@ -127,24 +146,65 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
   );
 
   const addRule = useCallback(
-    (presetId: string, word: string, style: HighlightStyle) => {
+    (
+      presetId: string,
+      word: string,
+      colorOrStyle?: HighlightColor | HighlightStyle | null,
+      underline?: UnderlineStyle | null,
+    ) => {
       const cleanWord = word.trim();
       if (!cleanWord) return;
+
+      let finalColor: HighlightColor | null = null;
+      let finalUnderline: UnderlineStyle | null = underline ?? null;
+
+      if (typeof colorOrStyle === 'string') {
+        const lower = colorOrStyle.toLowerCase();
+        if (['yellow', 'green', 'blue', 'pink'].includes(lower)) {
+          finalColor = lower as HighlightColor;
+        } else if (colorOrStyle.startsWith('#')) {
+          finalColor = colorOrStyle;
+        } else {
+          if (lower.includes('yellow')) finalColor = 'yellow';
+          else if (lower.includes('green')) finalColor = 'green';
+          else if (lower.includes('blue')) finalColor = 'blue';
+          else if (lower.includes('pink')) finalColor = 'pink';
+          else if (colorOrStyle.includes('#')) {
+            const match = colorOrStyle.match(/#[0-9a-fA-F]{3,8}/);
+            if (match) finalColor = match[0];
+          }
+
+          if (lower.includes('double')) finalUnderline = 'double';
+          else if (lower.includes('bold')) finalUnderline = 'bold';
+          else if (lower.includes('underline')) finalUnderline = 'solid';
+        }
+      }
+
+      if (!finalColor && !finalUnderline) {
+        finalColor = 'yellow';
+      }
 
       const newRule: KeywordRule = {
         id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         word: cleanWord,
-        style,
+        color: finalColor,
+        underline: finalUnderline,
       };
 
       setPresets((prev) =>
         prev.map((p) => {
           if (p.id !== presetId) return p;
           // ตรวจสอบว่ามีคำนี้อยู่แล้วหรือไม่ ถ้ามีให้อัปเดตสไตล์แทน
-          const existingIdx = p.rules.findIndex((r) => r.word.toLowerCase() === cleanWord.toLowerCase());
+          const existingIdx = p.rules.findIndex(
+            (r) => r.word.toLowerCase() === cleanWord.toLowerCase(),
+          );
           if (existingIdx !== -1) {
             const updatedRules = [...p.rules];
-            updatedRules[existingIdx] = { ...updatedRules[existingIdx], style };
+            updatedRules[existingIdx] = {
+              ...updatedRules[existingIdx],
+              color: finalColor,
+              underline: finalUnderline,
+            };
             return { ...p, rules: updatedRules };
           }
           return { ...p, rules: [...p.rules, newRule] };
@@ -184,6 +244,27 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
     [setPresets],
   );
 
+  const addCustomColor = useCallback(
+    (color: string) => {
+      const clean = color.trim().toLowerCase();
+      if (!clean) return;
+      setCustomColors((prev) => {
+        if (prev.includes(clean)) return prev;
+        // Keep at most 10 recent custom colors
+        return [clean, ...prev.filter((c) => c !== clean)].slice(0, 10);
+      });
+    },
+    [setCustomColors],
+  );
+
+  const removeCustomColor = useCallback(
+    (color: string) => {
+      const clean = color.trim().toLowerCase();
+      setCustomColors((prev) => prev.filter((c) => c !== clean));
+    },
+    [setCustomColors],
+  );
+
   const resetToDefaults = useCallback(() => {
     setPresets(DEFAULT_PRESETS);
     setActivePresetId('general-rules');
@@ -197,6 +278,7 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
       isEnabled,
       activePreset,
       activeRules,
+      customColors,
       setIsEnabled,
       toggleEnabled,
       setActivePresetId,
@@ -207,6 +289,8 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
       addRule,
       updateRule,
       removeRule,
+      addCustomColor,
+      removeCustomColor,
       resetToDefaults,
     }),
     [
@@ -215,6 +299,7 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
       isEnabled,
       activePreset,
       activeRules,
+      customColors,
       setIsEnabled,
       toggleEnabled,
       setActivePresetId,
@@ -225,6 +310,8 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
       addRule,
       updateRule,
       removeRule,
+      addCustomColor,
+      removeCustomColor,
       resetToDefaults,
     ],
   );

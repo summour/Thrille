@@ -1,8 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { Icon } from '@/components/Icon';
+import {
+  getCustomColorStyle,
+  getHighlightClassNames,
+  getRuleStyles,
+  getContrastTextColor,
+} from '@/lib/highlighter';
 import { useHighlight } from '@/store/HighlightContext';
 import { useToast } from '@/store/ToastContext';
-import type { HighlightStyle } from '@/types/highlight';
+import type { HighlightColor, UnderlineStyle } from '@/types/highlight';
 
 interface HighlightManagerSheetProps {
   isOpen: boolean;
@@ -10,14 +16,11 @@ interface HighlightManagerSheetProps {
   initialWord?: string;
 }
 
-const STYLE_OPTIONS: { id: HighlightStyle; label: string; previewClass: string }[] = [
-  { id: 'yellow', label: 'เหลือง', previewClass: 'hl hl--yellow' },
-  { id: 'green', label: 'เขียว', previewClass: 'hl hl--green' },
-  { id: 'blue', label: 'ฟ้า', previewClass: 'hl hl--blue' },
-  { id: 'pink', label: 'ชมพู', previewClass: 'hl hl--pink' },
-  { id: 'underline', label: 'ขีดเส้นใต้', previewClass: 'hl hl--underline' },
-  { id: 'underline-bold', label: 'เส้นใต้หนา', previewClass: 'hl hl--underline-bold' },
-  { id: 'underline-double', label: 'เส้นคู่', previewClass: 'hl hl--underline-double' },
+const COLOR_OPTIONS: { id: HighlightColor; label: string; className: string }[] = [
+  { id: 'yellow', label: 'สีเหลืองนีออน', className: 'sheet-color-btn--yellow' },
+  { id: 'green', label: 'สีเขียวนีออน', className: 'sheet-color-btn--green' },
+  { id: 'blue', label: 'สีฟ้านีออน', className: 'sheet-color-btn--blue' },
+  { id: 'pink', label: 'สีชมพูนีออน', className: 'sheet-color-btn--pink' },
 ];
 
 export function HighlightManagerSheet({
@@ -30,6 +33,7 @@ export function HighlightManagerSheet({
     activePresetId,
     activePreset,
     isEnabled,
+    customColors,
     toggleEnabled,
     setActivePresetId,
     createPreset,
@@ -38,13 +42,17 @@ export function HighlightManagerSheet({
     duplicatePreset,
     addRule,
     removeRule,
+    addCustomColor,
     resetToDefaults,
   } = useHighlight();
 
   const { showToast } = useToast();
 
   const [inputWord, setInputWord] = useState(initialWord);
-  const [selectedStyle, setSelectedStyle] = useState<HighlightStyle>('yellow');
+  const [selectedColor, setSelectedColor] = useState<HighlightColor | null>('yellow');
+  const [selectedUnderline, setSelectedUnderline] = useState<UnderlineStyle | null>(null);
+  const [pickerColor, setPickerColor] = useState('#a855f7');
+
   const [isCreatingPreset, setIsCreatingPreset] = useState(false);
   const [newPresetName, setNewPresetName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
@@ -52,17 +60,49 @@ export function HighlightManagerSheet({
 
   if (!isOpen) return null;
 
+  const handleSelectColor = (color: HighlightColor) => {
+    if (selectedColor === color) {
+      // ยกเลิกสีเฉพาะเมื่อมีการเลือกเส้นใต้อยู่ เพื่อไม่ให้กลายเป็นไม่มีสไตล์เลย
+      if (selectedUnderline) {
+        setSelectedColor(null);
+      }
+    } else {
+      setSelectedColor(color);
+    }
+  };
+
+  const handleCustomColorPicker = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const hex = e.target.value;
+    if (!hex) return;
+    setPickerColor(hex);
+    addCustomColor(hex);
+    setSelectedColor(hex);
+  };
+
+  const handleSelectUnderline = (underline: UnderlineStyle) => {
+    if (selectedUnderline === underline) {
+      // ยกเลิกเส้นใต้เฉพาะเมื่อมีสีเลือกอยู่ เพื่อไม่ให้กลายเป็นไม่มีสไตล์เลย
+      if (selectedColor) {
+        setSelectedUnderline(null);
+      }
+    } else {
+      setSelectedUnderline(underline);
+    }
+  };
+
   const handleAddRule = (e: FormEvent) => {
     e.preventDefault();
     const word = inputWord.trim();
     if (!word) return;
 
+    const finalColor = selectedColor || (!selectedUnderline ? 'yellow' : null);
+    const finalUnderline = selectedUnderline || null;
+
     if (!activePreset) {
-      // ถ้ายังไม่มีชุดที่เลือก ให้สร้างขึ้นมาใหม่อัตโนมัติ
       const p = createPreset('ชุดคำสำคัญของฉัน');
-      addRule(p.id, word, selectedStyle);
+      addRule(p.id, word, finalColor, finalUnderline);
     } else {
-      addRule(activePreset.id, word, selectedStyle);
+      addRule(activePreset.id, word, finalColor, finalUnderline);
     }
 
     showToast(`เพิ่มคำว่า "${word}" เรียบร้อย`);
@@ -113,7 +153,7 @@ export function HighlightManagerSheet({
         <div className="sheet-header">
           <div className="sheet-header__title-group">
             <Icon name="highlighter" size={19} className="sheet-header__icon" />
-            <h2 className="sheet-header__title">ชุดคำสำคัญช่วยจำ</h2>
+            <h2 className="sheet-header__title">คำสำคัญช่วยจำ</h2>
           </div>
 
           <div className="sheet-header__actions">
@@ -123,7 +163,7 @@ export function HighlightManagerSheet({
               onClick={toggleEnabled}
               title={isEnabled ? 'ปิดการไฮไลท์' : 'เปิดการไฮไลท์'}
             >
-              {isEnabled ? 'เปิดใช้งานอยู่' : 'ปิดใช้งาน'}
+              {isEnabled ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
             </button>
             <button
               type="button"
@@ -159,7 +199,7 @@ export function HighlightManagerSheet({
               }}
             >
               <Icon name="plus" size={13} style={{ marginRight: '4px' }} />
-              เพิ่มชุดวิชาใหม่
+              เพิ่มชุดใหม่
             </button>
           </div>
         </div>
@@ -215,12 +255,7 @@ export function HighlightManagerSheet({
               </form>
             ) : (
               <div className="sheet-active-title-row">
-                <div>
-                  <h3 className="sheet-active-name">{activePreset.name}</h3>
-                  {activePreset.description ? (
-                    <p className="sheet-active-desc">{activePreset.description}</p>
-                  ) : null}
-                </div>
+                <h3 className="sheet-active-name">{activePreset.name}</h3>
                 <div className="sheet-active-actions">
                   <button
                     type="button"
@@ -267,7 +302,7 @@ export function HighlightManagerSheet({
             <div className="sheet-add-word-row">
               <input
                 type="text"
-                placeholder="พิมพ์คำที่ต้องการเน้น (เช่น สัญญา, โมฆะ)..."
+                placeholder="พิมพ์คำที่ต้องการเน้น เช่น สัญญา, โมฆะ..."
                 value={inputWord}
                 onChange={(e) => setInputWord(e.target.value)}
                 className="sheet-input sheet-input--grow"
@@ -282,22 +317,107 @@ export function HighlightManagerSheet({
               </button>
             </div>
 
-            {/* Style Selector Chips */}
-            <div className="sheet-style-selector">
-              <span className="sheet-style-label">เลือกสไตล์:</span>
-              <div className="sheet-style-options">
-                {STYLE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    className={`sheet-style-chip ${
-                      selectedStyle === opt.id ? 'is-selected' : ''
-                    }`}
-                    onClick={() => setSelectedStyle(opt.id)}
-                  >
-                    <span className={opt.previewClass}>{opt.label}</span>
-                  </button>
-                ))}
+            {/* Simultaneous Color & Underline Style Bar */}
+            <div className="sheet-style-bar">
+              {/* Color Swatches & Wheel */}
+              <div className="sheet-style-group" role="group" aria-label="เลือกสี">
+                {/* Default Neon Swatches */}
+                {COLOR_OPTIONS.map((c) => {
+                  const isSelected = selectedColor === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className={`sheet-color-btn ${c.className} ${isSelected ? 'is-selected' : ''}`}
+                      onClick={() => handleSelectColor(c.id)}
+                      aria-label={c.label}
+                      aria-pressed={isSelected}
+                    >
+                      {isSelected && <Icon name="check" size={14} />}
+                    </button>
+                  );
+                })}
+
+                {/* User Saved Custom Colors */}
+                {customColors.map((hex) => {
+                  const isSelected = selectedColor === hex;
+                  return (
+                    <button
+                      key={hex}
+                      type="button"
+                      className={`sheet-color-btn ${isSelected ? 'is-selected' : ''}`}
+                      style={{ backgroundColor: hex, color: getContrastTextColor(hex) }}
+                      onClick={() => handleSelectColor(hex)}
+                      aria-label={`สีที่กำหนดเอง ${hex}`}
+                      aria-pressed={isSelected}
+                    >
+                      {isSelected && <Icon name="check" size={14} />}
+                    </button>
+                  );
+                })}
+
+                {/* Color Wheel Button */}
+                <label
+                  className="sheet-color-wheel-btn"
+                  title="เลือกสีใหม่ด้วยวงล้อสี"
+                  aria-label="วงล้อสี"
+                >
+                  <input
+                    type="color"
+                    value={pickerColor}
+                    onChange={handleCustomColorPicker}
+                    className="sheet-color-wheel-input"
+                    aria-label="วงล้อเลือกสี"
+                  />
+                </label>
+              </div>
+
+              <div className="sheet-style-divider" />
+
+              {/* Underline Style Buttons */}
+              <div className="sheet-style-group" role="group" aria-label="เลือกรูปแบบเส้นใต้">
+                {/* Solid Underline */}
+                <button
+                  type="button"
+                  className={`sheet-line-btn ${selectedUnderline === 'solid' ? 'is-selected' : ''}`}
+                  onClick={() => handleSelectUnderline('solid')}
+                  aria-label="ขีดเส้นใต้"
+                  aria-pressed={selectedUnderline === 'solid'}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 3.5v7a6 6 0 0 0 12 0v-7" strokeWidth="2" />
+                    <line x1="4" y1="20" x2="20" strokeWidth="2.2" />
+                  </svg>
+                </button>
+
+                {/* Bold Underline */}
+                <button
+                  type="button"
+                  className={`sheet-line-btn ${selectedUnderline === 'bold' ? 'is-selected' : ''}`}
+                  onClick={() => handleSelectUnderline('bold')}
+                  aria-label="เส้นใต้หนา"
+                  aria-pressed={selectedUnderline === 'bold'}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 3.5v7a6 6 0 0 0 12 0v-7" strokeWidth="2" />
+                    <line x1="4" y1="20" x2="20" strokeWidth="4" />
+                  </svg>
+                </button>
+
+                {/* Double Underline */}
+                <button
+                  type="button"
+                  className={`sheet-line-btn ${selectedUnderline === 'double' ? 'is-selected' : ''}`}
+                  onClick={() => handleSelectUnderline('double')}
+                  aria-label="เส้นใต้คู่"
+                  aria-pressed={selectedUnderline === 'double'}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 3.5v7a6 6 0 0 0 12 0v-7" strokeWidth="2" />
+                    <line x1="4" y1="18.5" x2="20" y2="18.5" strokeWidth="1.8" />
+                    <line x1="4" y1="22" x2="20" y2="22" strokeWidth="1.8" />
+                  </svg>
+                </button>
               </div>
             </div>
           </form>
@@ -306,25 +426,23 @@ export function HighlightManagerSheet({
         {/* Rules Word List in Current Preset */}
         <div className="sheet-rules-section">
           <div className="sheet-rules-heading">
-            <span>คำที่ตั้งค่าไว้ในชุดนี้ ({activePreset?.rules.length || 0})</span>
-            {activePreset && activePreset.rules.length > 0 && (
-              <span className="sheet-rules-sub">แตะที่เครื่องหมายกากบาทเพื่อลบคำ</span>
-            )}
+            <span>คำที่ตั้งค่าไว้ ({activePreset?.rules.length || 0})</span>
           </div>
 
           {!activePreset || activePreset.rules.length === 0 ? (
             <div className="sheet-rules-empty">
-              ยังไม่มีคำสำคัญในชุดนี้ พิมพ์คำและเลือกสไตล์ด้านบนเพื่อเพิ่มคำ
+              ยังไม่มีคำสำคัญในชุดนี้
             </div>
           ) : (
             <div className="sheet-rule-chips">
               {activePreset.rules.map((rule) => {
-                const styleOpt =
-                  STYLE_OPTIONS.find((s) => s.id === rule.style) || STYLE_OPTIONS[0];
+                const styles = getRuleStyles(rule);
+                const classNames = getHighlightClassNames(styles.color, styles.underline);
+                const customStyle = getCustomColorStyle(styles.color);
 
                 return (
                   <div key={rule.id} className="sheet-rule-tag">
-                    <span className={styleOpt.previewClass}>{rule.word}</span>
+                    <span className={classNames} style={customStyle}>{rule.word}</span>
                     <button
                       type="button"
                       className="sheet-rule-remove"
@@ -343,7 +461,7 @@ export function HighlightManagerSheet({
           )}
         </div>
 
-        {/* Footer info */}
+        {/* Footer */}
         <div className="sheet-footer">
           <button
             type="button"
@@ -357,11 +475,9 @@ export function HighlightManagerSheet({
           >
             คืนค่าเริ่มต้น
           </button>
-          <span className="sheet-footer__hint">
-            คำที่ตั้งไว้จะถูกไฮไลท์อัตโนมัติขณะเปิดอ่านตัวบทกฎหมาย
-          </span>
         </div>
       </div>
     </div>
   );
 }
+

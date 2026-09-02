@@ -1,22 +1,16 @@
 import { Fragment, useMemo } from 'react';
-import { parseHighlightedText } from '@/lib/highlighter';
-import type { HighlightStyle, KeywordRule } from '@/types/highlight';
+import {
+  getCustomColorStyle,
+  getHighlightClassNames,
+  parseHighlightedText,
+} from '@/lib/highlighter';
+import type { KeywordRule } from '@/types/highlight';
 
 interface SmartArticleTextProps {
   text: string;
   rules?: KeywordRule[];
   enabled?: boolean;
 }
-
-const STYLE_CLASS_MAP: Record<HighlightStyle, string> = {
-  yellow: 'hl hl--yellow',
-  green: 'hl hl--green',
-  blue: 'hl hl--blue',
-  pink: 'hl hl--pink',
-  underline: 'hl hl--underline',
-  'underline-bold': 'hl hl--underline-bold',
-  'underline-double': 'hl hl--underline-double',
-};
 
 export function SmartArticleText({
   text,
@@ -34,14 +28,15 @@ export function SmartArticleText({
   return (
     <>
       {segments.map((seg, idx) => {
-        if (!seg.isMatch || !seg.style) {
+        if (!seg.isMatch || (!seg.color && !seg.underline)) {
           return <Fragment key={idx}>{seg.text}</Fragment>;
         }
 
-        const className = STYLE_CLASS_MAP[seg.style] || 'hl hl--yellow';
+        const className = getHighlightClassNames(seg.color ?? null, seg.underline ?? null);
+        const style = getCustomColorStyle(seg.color);
 
         return (
-          <mark key={idx} className={className} data-word={seg.word}>
+          <mark key={idx} className={className} style={style} data-word={seg.word}>
             {seg.text}
           </mark>
         );
@@ -49,3 +44,4 @@ export function SmartArticleText({
     </>
   );
 }
+
