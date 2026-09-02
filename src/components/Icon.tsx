@@ -19,6 +19,7 @@ export type IconName =
   | 'trash'
   | 'check'
   | 'edit'
+  | 'copy'
   | 'sliders';
 
 interface IconProps {
@@ -75,6 +76,10 @@ const PATHS: Record<IconName, { d: string; fill?: boolean }[]> = {
   edit: [
     { d: 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' },
     { d: 'M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z' },
+  ],
+  copy: [
+    { d: 'M9 9h13v13H9z' },
+    { d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' },
   ],
   sliders: [
     { d: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6' },
