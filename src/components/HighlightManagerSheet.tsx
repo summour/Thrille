@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useRef, type FormEvent } from 'react';
 import { Icon } from '@/components/Icon';
 import {
   getCustomColorStyle,
@@ -43,6 +43,7 @@ export function HighlightManagerSheet({
     addRule,
     removeRule,
     addCustomColor,
+    removeCustomColor,
     resetToDefaults,
   } = useHighlight();
 
@@ -52,6 +53,7 @@ export function HighlightManagerSheet({
   const [selectedColor, setSelectedColor] = useState<HighlightColor | null>('yellow');
   const [selectedUnderline, setSelectedUnderline] = useState<UnderlineStyle | null>(null);
   const [pickerColor, setPickerColor] = useState('#a855f7');
+  const colorsGroupRef = useRef<HTMLDivElement>(null);
 
   const [isCreatingPreset, setIsCreatingPreset] = useState(false);
   const [newPresetName, setNewPresetName] = useState('');
@@ -77,6 +79,22 @@ export function HighlightManagerSheet({
     setPickerColor(hex);
     addCustomColor(hex);
     setSelectedColor(hex);
+    setTimeout(() => {
+      if (colorsGroupRef.current) {
+        colorsGroupRef.current.scrollTo({
+          left: colorsGroupRef.current.scrollWidth,
+          behavior: 'smooth',
+        });
+      }
+    }, 60);
+  };
+
+  const handleDeleteCustomColor = (hex: string) => {
+    removeCustomColor(hex);
+    if (selectedColor === hex) {
+      setSelectedColor('yellow');
+    }
+    showToast(`ลบสีเรียบร้อย`);
   };
 
   const handleSelectUnderline = (underline: UnderlineStyle) => {
@@ -319,8 +337,13 @@ export function HighlightManagerSheet({
 
             {/* Simultaneous Color & Underline Style Bar */}
             <div className="sheet-style-bar">
-              {/* Color Swatches & Wheel */}
-              <div className="sheet-style-group" role="group" aria-label="เลือกสี">
+              {/* Color Swatches & Wheel (Left Half - Scrollable) */}
+              <div
+                ref={colorsGroupRef}
+                className="sheet-style-group sheet-style-group--colors"
+                role="group"
+                aria-label="เลือกสี"
+              >
                 {/* Default Neon Swatches */}
                 {COLOR_OPTIONS.map((c) => {
                   const isSelected = selectedColor === c.id;
@@ -342,17 +365,30 @@ export function HighlightManagerSheet({
                 {customColors.map((hex) => {
                   const isSelected = selectedColor === hex;
                   return (
-                    <button
-                      key={hex}
-                      type="button"
-                      className={`sheet-color-btn ${isSelected ? 'is-selected' : ''}`}
-                      style={{ backgroundColor: hex, color: getContrastTextColor(hex) }}
-                      onClick={() => handleSelectColor(hex)}
-                      aria-label={`สีที่กำหนดเอง ${hex}`}
-                      aria-pressed={isSelected}
-                    >
-                      {isSelected && <Icon name="check" size={14} />}
-                    </button>
+                    <div key={hex} className="sheet-custom-color-wrap">
+                      <button
+                        type="button"
+                        className={`sheet-color-btn ${isSelected ? 'is-selected' : ''}`}
+                        style={{ backgroundColor: hex, color: getContrastTextColor(hex) }}
+                        onClick={() => handleSelectColor(hex)}
+                        aria-label={`สีที่กำหนดเอง ${hex}`}
+                        aria-pressed={isSelected}
+                      >
+                        {isSelected && <Icon name="check" size={14} />}
+                      </button>
+                      <button
+                        type="button"
+                        className={`sheet-custom-color-del ${isSelected ? 'is-visible' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCustomColor(hex);
+                        }}
+                        title={`ลบสี ${hex}`}
+                        aria-label={`ลบสี ${hex}`}
+                      >
+                        <Icon name="close" size={9} />
+                      </button>
+                    </div>
                   );
                 })}
 
@@ -372,10 +408,15 @@ export function HighlightManagerSheet({
                 </label>
               </div>
 
+              {/* Center Divider Locked at Middle */}
               <div className="sheet-style-divider" />
 
-              {/* Underline Style Buttons */}
-              <div className="sheet-style-group" role="group" aria-label="เลือกรูปแบบเส้นใต้">
+              {/* Underline Style Buttons (Right Half) */}
+              <div
+                className="sheet-style-group sheet-style-group--lines"
+                role="group"
+                aria-label="เลือกรูปแบบเส้นใต้"
+              >
                 {/* Solid Underline */}
                 <button
                   type="button"
@@ -386,21 +427,7 @@ export function HighlightManagerSheet({
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 3.5v7a6 6 0 0 0 12 0v-7" strokeWidth="2" />
-                    <line x1="4" y1="20" x2="20" strokeWidth="2.2" />
-                  </svg>
-                </button>
-
-                {/* Bold Underline */}
-                <button
-                  type="button"
-                  className={`sheet-line-btn ${selectedUnderline === 'bold' ? 'is-selected' : ''}`}
-                  onClick={() => handleSelectUnderline('bold')}
-                  aria-label="เส้นใต้หนา"
-                  aria-pressed={selectedUnderline === 'bold'}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M6 3.5v7a6 6 0 0 0 12 0v-7" strokeWidth="2" />
-                    <line x1="4" y1="20" x2="20" strokeWidth="4" />
+                    <line x1="4" y1="20" x2="20" y2="20" strokeWidth="2" />
                   </svg>
                 </button>
 
@@ -416,6 +443,22 @@ export function HighlightManagerSheet({
                     <path d="M6 3.5v7a6 6 0 0 0 12 0v-7" strokeWidth="2" />
                     <line x1="4" y1="18.5" x2="20" y2="18.5" strokeWidth="1.8" />
                     <line x1="4" y1="22" x2="20" y2="22" strokeWidth="1.8" />
+                  </svg>
+                </button>
+
+                {/* Circle / Oval Outline */}
+                <button
+                  type="button"
+                  className={`sheet-line-btn ${selectedUnderline === 'circle' ? 'is-selected' : ''}`}
+                  onClick={() => handleSelectUnderline('circle')}
+                  aria-label="วงรอบคำ"
+                  aria-pressed={selectedUnderline === 'circle'}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                    {/* Centered U */}
+                    <path d="M8.5 7.5v4a3.5 3.5 0 0 0 7 0v-4" strokeWidth="2" />
+                    {/* Horizontal Oval / Capsule boundary surrounding U */}
+                    <rect x="2" y="4" width="20" height="16" rx="8" strokeWidth="1.8" />
                   </svg>
                 </button>
               </div>
