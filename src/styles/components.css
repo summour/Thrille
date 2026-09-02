@@ -996,6 +996,26 @@
 }
 .sheet-preset-chips::-webkit-scrollbar { display: none; }
 
+.sheet-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sheet-preset-chip--off {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.sheet-preset-chip[aria-pressed='true'].sheet-preset-chip--off {
+  opacity: 0.85;
+}
+
+.sheet-preset-off-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
 .chip--action {
   border-style: dashed;
   color: var(--fg);
@@ -1023,7 +1043,7 @@
 
 .sheet-active-title-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
@@ -1062,6 +1082,18 @@
 .sheet-small-btn:active {
   background: var(--surface-active);
   color: var(--fg);
+}
+
+.sheet-small-btn--active {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+  font-weight: 600;
+}
+
+.sheet-small-btn--muted {
+  opacity: 0.6;
+  border-style: dashed;
 }
 
 .sheet-small-btn--danger {
