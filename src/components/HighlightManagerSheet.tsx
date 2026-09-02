@@ -32,9 +32,8 @@ export function HighlightManagerSheet({
     presets,
     activePresetId,
     activePreset,
-    isEnabled,
     customColors,
-    toggleEnabled,
+    togglePresetEnabled,
     setActivePresetId,
     createPreset,
     updatePreset,
@@ -177,14 +176,6 @@ export function HighlightManagerSheet({
           <div className="sheet-header__actions">
             <button
               type="button"
-              className={`sheet-toggle-btn ${isEnabled ? 'is-active' : ''}`}
-              onClick={toggleEnabled}
-              title={isEnabled ? 'ปิดการไฮไลท์' : 'เปิดการไฮไลท์'}
-            >
-              {isEnabled ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
-            </button>
-            <button
-              type="button"
               className="icon-button"
               onClick={onClose}
               aria-label="ปิดหน้าต่าง"
@@ -197,17 +188,24 @@ export function HighlightManagerSheet({
         {/* Preset Selector Chips */}
         <div className="sheet-preset-chips-wrap">
           <div className="sheet-preset-chips">
-            {presets.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                className="chip"
-                aria-pressed={activePresetId === preset.id}
-                onClick={() => setActivePresetId(preset.id)}
-              >
-                {preset.name} ({preset.rules.length})
-              </button>
-            ))}
+            {presets.map((preset) => {
+              const isPresetEnabled = preset.enabled !== false;
+              const isSelected = activePresetId === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className={`chip sheet-preset-chip ${
+                    !isPresetEnabled ? 'sheet-preset-chip--off' : ''
+                  }`}
+                  aria-pressed={isSelected}
+                  onClick={() => setActivePresetId(preset.id)}
+                >
+                  {preset.name} ({preset.rules.length})
+                  {!isPresetEnabled && <span className="sheet-preset-off-label">· ปิด</span>}
+                </button>
+              );
+            })}
             <button
               type="button"
               className="chip chip--action"
@@ -274,7 +272,38 @@ export function HighlightManagerSheet({
             ) : (
               <div className="sheet-active-title-row">
                 <h3 className="sheet-active-name">{activePreset.name}</h3>
+
                 <div className="sheet-active-actions">
+                  <button
+                    type="button"
+                    className={`sheet-small-btn ${
+                      activePreset.enabled !== false
+                        ? 'sheet-small-btn--active'
+                        : 'sheet-small-btn--muted'
+                    }`}
+                    onClick={() => {
+                      togglePresetEnabled(activePreset.id);
+                      showToast(
+                        activePreset.enabled !== false
+                          ? `ปิดใช้งานชุด "${activePreset.name}"`
+                          : `เปิดใช้งานชุด "${activePreset.name}"`,
+                      );
+                    }}
+                    title={
+                      activePreset.enabled !== false
+                        ? 'แตะเพื่อปิดใช้งานชุดนี้'
+                        : 'แตะเพื่อเปิดใช้งานชุดนี้'
+                    }
+                  >
+                    {activePreset.enabled !== false ? (
+                      <>
+                        <Icon name="check" size={13} />
+                        เปิดใช้อยู่
+                      </>
+                    ) : (
+                      'ปิดใช้อยู่'
+                    )}
+                  </button>
                   <button
                     type="button"
                     className="sheet-small-btn"
@@ -284,7 +313,7 @@ export function HighlightManagerSheet({
                     }}
                     title="เปลี่ยนชื่อชุดคำ"
                   >
-                    <Icon name="edit" size={14} />
+                    <Icon name="edit" size={13} />
                     แก้ไขชื่อ
                   </button>
                   <button
@@ -305,7 +334,7 @@ export function HighlightManagerSheet({
                       onClick={handleDeleteActivePreset}
                       title="ลบชุดคำนี้"
                     >
-                      <Icon name="trash" size={14} />
+                      <Icon name="trash" size={13} />
                     </button>
                   )}
                 </div>
