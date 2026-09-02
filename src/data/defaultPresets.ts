@@ -4,6 +4,7 @@ export const DEFAULT_PRESETS: KeywordPreset[] = [
   {
     id: 'general-rules',
     name: 'ข้อยกเว้น & เงื่อนไขบังคับ',
+    enabled: true,
     createdAt: 1700000000000,
     rules: [
       { id: 'gr-1', word: 'เว้นแต่', color: null, underline: 'double' },
@@ -19,6 +20,7 @@ export const DEFAULT_PRESETS: KeywordPreset[] = [
   {
     id: 'property-law',
     name: 'วิชาทรัพย์สินและที่ดิน',
+    enabled: true,
     createdAt: 1700000001000,
     rules: [
       { id: 'pl-1', word: 'อสังหาริมทรัพย์', color: 'green', underline: null },
@@ -39,6 +41,7 @@ export const DEFAULT_PRESETS: KeywordPreset[] = [
   {
     id: 'contracts-obligations',
     name: 'นิติกรรมและสัญญา',
+    enabled: true,
     createdAt: 1700000002000,
     rules: [
       { id: 'co-1', word: 'นิติกรรม', color: 'yellow', underline: null },
