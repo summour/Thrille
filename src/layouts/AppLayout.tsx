@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { MiniAudioPlayer } from '@/components/MiniAudioPlayer';
 import { TabBar } from '@/navigation/TabBar';
 
 /** เฟรมหลักของแอป: คอลัมน์เดียว กว้างสูงสุดเท่าหน้าจอมือถือ อ่านง่ายทั้งบนมือถือและเดสก์ท็อป */
@@ -66,7 +65,6 @@ export function AppLayout() {
   return (
     <div className="app-shell" ref={shellRef}>
       <Outlet />
-      <MiniAudioPlayer />
       <TabBar />
     </div>
   );

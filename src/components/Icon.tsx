@@ -13,12 +13,19 @@ export type IconName =
   | 'stop'
   | 'close'
   | 'sun'
-  | 'moon';
+  | 'moon'
+  | 'highlighter'
+  | 'plus'
+  | 'trash'
+  | 'check'
+  | 'edit'
+  | 'sliders';
 
 interface IconProps {
   name: IconName;
   size?: number;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const PATHS: Record<IconName, { d: string; fill?: boolean }[]> = {
@@ -54,12 +61,31 @@ const PATHS: Record<IconName, { d: string; fill?: boolean }[]> = {
     { d: 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z' },
   ],
   moon: [{ d: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z' }],
+  highlighter: [
+    { d: 'm9 11-6 6v3h3l6-6' },
+    { d: 'm22 7-4.5-4.5a2.121 2.121 0 0 0-3 0L3.5 13.5' },
+    { d: 'm14 4 6 6' },
+  ],
+  plus: [{ d: 'M12 5v14M5 12h14' }],
+  trash: [
+    { d: 'M3 6h18' },
+    { d: 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' },
+  ],
+  check: [{ d: 'M20 6 9 17l-5-5' }],
+  edit: [
+    { d: 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7' },
+    { d: 'M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z' },
+  ],
+  sliders: [
+    { d: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6' },
+  ],
 };
 
-export function Icon({ name, size = 20, className }: IconProps) {
+export function Icon({ name, size = 20, className, style }: IconProps) {
   return (
     <svg
       className={className}
+      style={style}
       width={size}
       height={size}
       viewBox="0 0 24 24"

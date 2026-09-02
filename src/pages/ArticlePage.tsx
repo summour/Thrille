@@ -4,9 +4,11 @@ import { BookmarkButton } from '@/components/BookmarkButton';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { DecisionRow } from '@/components/DecisionRow';
 import { EmptyState } from '@/components/EmptyState';
+import { HighlightManagerSheet } from '@/components/HighlightManagerSheet';
 import { Icon } from '@/components/Icon';
 import { PrevNextBar } from '@/components/PrevNextBar';
 import { SectionHeading } from '@/components/SectionHeading';
+import { SmartArticleText } from '@/components/SmartArticleText';
 import { PageHeader } from '@/layouts/PageHeader';
 import { nodeLabel } from '@/lib/format';
 import {
@@ -17,9 +19,9 @@ import {
   getLawIdForArticle,
   getLawMeta,
 } from '@/lib/lawIndex';
-import { type LawSpeechState, speechReader } from '@/lib/speech';
 import { routes } from '@/navigation/routes';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { useHighlight } from '@/store/HighlightContext';
 import { useLibrary } from '@/store/LibraryContext';
 import { useTheme } from '@/store/ThemeContext';
 import { useToast } from '@/store/ToastContext';
@@ -37,48 +39,18 @@ export function ArticlePage() {
   const { markAsRead, toggleBookmark } = useLibrary();
   const { cycleFontScale, fontScaleLabel } = useTheme();
   const { showToast } = useToast();
+  const { activeRules, isEnabled, activePreset } = useHighlight();
 
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null);
-
-  const [speechState, setSpeechState] = useState<LawSpeechState>(speechReader.getState());
+  const [isHighlightSheetOpen, setIsHighlightSheetOpen] = useState(false);
 
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null);
   const isHorizontalSwipeRef = useRef(false);
   const isVerticalScrollRef = useRef(false);
-
-  useEffect(() => {
-    const unsubscribe = speechReader.subscribe((state) => {
-      setSpeechState(state);
-    });
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  // เมื่อระบบอ่านเบื้องหลังเปลี่ยนไปยังมาตราถัดไป ให้ปรับหน้าจอตามสิ่งที่กำลังอ่าน
-  useEffect(() => {
-    if (
-      speechState.isPlaying &&
-      speechState.currentArticleId &&
-      speechState.currentArticleId !== articleId &&
-      speechState.currentLawId === resolvedLawId
-    ) {
-      navigate(routes.article(speechState.currentArticleId, speechState.currentLawId), {
-        replace: true,
-      });
-    }
-  }, [
-    speechState.isPlaying,
-    speechState.currentArticleId,
-    speechState.currentLawId,
-    articleId,
-    resolvedLawId,
-    navigate,
-  ]);
 
   const handleDoubleTap = () => {
     if (!article) return;
@@ -90,9 +62,6 @@ export function ArticlePage() {
   const { previous, next } = article
     ? getAdjacentArticleIds(article.id, resolvedLawId)
     : { previous: undefined, next: undefined };
-
-  const isSpeakingCurrent =
-    speechState.isPlaying && speechState.currentArticleId === articleId;
 
   useEffect(() => {
     if (article) markAsRead(article.id);
@@ -128,21 +97,6 @@ export function ArticlePage() {
   const handleFontScale = () => {
     cycleFontScale();
     showToast(`ขนาดตัวอักษร: ${fontScaleLabel}`);
-  };
-
-  const handleToggleSpeech = () => {
-    if (!article) return;
-    if (isSpeakingCurrent) {
-      speechReader.stop();
-    } else {
-      speechReader.setAutoPlay(true);
-      speechReader.playArticle(article.id, resolvedLawId);
-    }
-  };
-
-  const handleCycleSpeechRate = () => {
-    const nextRate = speechState.rate === 1.0 ? 1.25 : speechState.rate === 1.25 ? 1.5 : 1.0;
-    speechReader.setRate(nextRate);
   };
 
   // --- Touch Swipe Handlers ---
@@ -278,24 +232,19 @@ export function ArticlePage() {
           <>
             <button
               type="button"
-              className={`icon-button ${isSpeakingCurrent ? 'icon-button--active' : ''}`}
-              onClick={handleToggleSpeech}
-              aria-label={isSpeakingCurrent ? 'หยุดอ่าน' : 'อ่านออกเสียงมาตรานี้'}
-              title={isSpeakingCurrent ? 'หยุดอ่าน' : 'อ่านออกเสียงมาตรานี้ (เล่นเบื้องหลังได้)'}
+              className={`icon-button ${
+                isEnabled && activeRules.length > 0 ? 'icon-button--active' : ''
+              }`}
+              onClick={() => setIsHighlightSheetOpen(true)}
+              aria-label="ตั้งค่าคำสำคัญและไฮไลท์"
+              title={
+                activePreset
+                  ? `ชุดคำสำคัญ: ${activePreset.name} (${activeRules.length} คำ)`
+                  : 'ตั้งค่าคำสำคัญช่วยจำ'
+              }
             >
-              <Icon name={isSpeakingCurrent ? 'volume' : 'volumeOff'} size={20} />
+              <Icon name="highlighter" size={19} />
             </button>
-            {isSpeakingCurrent && (
-              <button
-                type="button"
-                className="icon-button icon-button--text"
-                onClick={handleCycleSpeechRate}
-                aria-label={`ความเร็วเสียงอ่าน ${speechState.rate} เท่า`}
-                style={{ fontSize: '12px', fontWeight: 600 }}
-              >
-                {speechState.rate}x
-              </button>
-            )}
             <button
               type="button"
               className="icon-button icon-button--text"
@@ -357,9 +306,23 @@ export function ArticlePage() {
 
           <article className="article-body">
             {article.paragraphs.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
+              <p key={index}>
+                <SmartArticleText
+                  text={paragraph}
+                  rules={activeRules}
+                  enabled={isEnabled}
+                />
+              </p>
             ))}
-            {article.note ? <p className="article-note">{article.note}</p> : null}
+            {article.note ? (
+              <p className="article-note">
+                <SmartArticleText
+                  text={article.note}
+                  rules={activeRules}
+                  enabled={isEnabled}
+                />
+              </p>
+            ) : null}
           </article>
 
           {/* ส่วนฎีกา แยกจากตัวบทด้วยเส้นคั่นหนา เพื่อไม่ให้ผู้ใช้สับสนว่าเป็นตัวบท */}
@@ -392,6 +355,11 @@ export function ArticlePage() {
         previousArticleId={previous}
         nextArticleId={next}
         activeDirection={activeSwipeDirection}
+      />
+
+      <HighlightManagerSheet
+        isOpen={isHighlightSheetOpen}
+        onClose={() => setIsHighlightSheetOpen(false)}
       />
     </>
   );

@@ -9,6 +9,7 @@ import { NodePage } from '@/pages/NodePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { SearchPage } from '@/pages/SearchPage';
 import { TocPage } from '@/pages/TocPage';
+import { HighlightProvider } from '@/store/HighlightContext';
 import { LibraryProvider } from '@/store/LibraryContext';
 import { ThemeProvider } from '@/store/ThemeContext';
 import { ToastProvider } from '@/store/ToastContext';
@@ -38,9 +39,11 @@ export default function App() {
   return (
     <ThemeProvider>
       <LibraryProvider>
-        <ToastProvider>
-          <RouterProvider router={router} />
-        </ToastProvider>
+        <HighlightProvider>
+          <ToastProvider>
+            <RouterProvider router={router} />
+          </ToastProvider>
+        </HighlightProvider>
       </LibraryProvider>
     </ThemeProvider>
   );
