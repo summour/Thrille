@@ -39,7 +39,7 @@ export function ArticlePage() {
   const { markAsRead, toggleBookmark } = useLibrary();
   const { cycleFontScale, fontScaleLabel } = useTheme();
   const { showToast } = useToast();
-  const { activeRules, isEnabled, activePreset } = useHighlight();
+  const { activeRules, isEnabled } = useHighlight();
 
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -238,8 +238,8 @@ export function ArticlePage() {
               onClick={() => setIsHighlightSheetOpen(true)}
               aria-label="ตั้งค่าคำสำคัญและไฮไลท์"
               title={
-                activePreset
-                  ? `ชุดคำสำคัญ: ${activePreset.name} (${activeRules.length} คำ)`
+                isEnabled && activeRules.length > 0
+                  ? `ไฮไลท์คำสำคัญ (${activeRules.length} คำที่เปิดใช้งาน)`
                   : 'ตั้งค่าคำสำคัญช่วยจำ'
               }
             >
