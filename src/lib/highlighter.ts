@@ -84,7 +84,8 @@ export function getRuleStyles(rule: {
       else if (s.includes('pink')) color = 'pink';
     }
 
-    if (s.includes('double')) underline = 'double';
+    if (s.includes('circle')) underline = 'circle';
+    else if (s.includes('double')) underline = 'double';
     else if (s.includes('bold')) underline = 'bold';
     else if (s.includes('underline')) underline = 'solid';
   }
@@ -109,6 +110,8 @@ export function getHighlightClassNames(
     classes.push('hl--underline-bold');
   } else if (underline === 'double') {
     classes.push('hl--underline-double');
+  } else if (underline === 'circle') {
+    classes.push('hl--circle');
   }
   return classes.join(' ');
 }
