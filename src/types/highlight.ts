@@ -25,6 +25,7 @@ export interface KeywordPreset {
   id: string;
   name: string;
   description?: string;
+  enabled?: boolean;
   rules: KeywordRule[];
   createdAt: number;
 }
