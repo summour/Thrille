@@ -22,9 +22,12 @@ interface HighlightContextValue {
   isEnabled: boolean;
   activePreset: KeywordPreset | null;
   activeRules: KeywordRule[];
+  enabledPresetsCount: number;
   customColors: string[];
   setIsEnabled: (enabled: boolean) => void;
   toggleEnabled: () => void;
+  togglePresetEnabled: (presetId: string) => void;
+  setPresetEnabled: (presetId: string, enabled: boolean) => void;
   setActivePresetId: (id: string | null) => void;
   createPreset: (name: string, description?: string) => KeywordPreset;
   updatePreset: (id: string, updates: Partial<KeywordPreset>) => void;
@@ -73,14 +76,48 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
     return presets.find((p) => p.id === activePresetId) || null;
   }, [presets, activePresetId]);
 
+  const enabledPresetsCount = useMemo(() => {
+    return presets.filter((p) => p.enabled !== false).length;
+  }, [presets]);
+
   const activeRules = useMemo(() => {
-    if (!isEnabled || !activePreset) return [];
-    return activePreset.rules || [];
-  }, [isEnabled, activePreset]);
+    if (!isEnabled) return [];
+    const enabledPresets = presets.filter((p) => p.enabled !== false);
+    const rulesMap = new Map<string, KeywordRule>();
+    for (const preset of enabledPresets) {
+      for (const rule of preset.rules) {
+        const key = rule.word.toLowerCase();
+        if (!rulesMap.has(key)) {
+          rulesMap.set(key, rule);
+        }
+      }
+    }
+    return Array.from(rulesMap.values());
+  }, [isEnabled, presets]);
 
   const toggleEnabled = useCallback(() => {
     setIsEnabled((prev) => !prev);
   }, [setIsEnabled]);
+
+  const togglePresetEnabled = useCallback(
+    (presetId: string) => {
+      setPresets((prev) =>
+        prev.map((p) =>
+          p.id === presetId ? { ...p, enabled: p.enabled === false ? true : false } : p,
+        ),
+      );
+    },
+    [setPresets],
+  );
+
+  const setPresetEnabled = useCallback(
+    (presetId: string, enabled: boolean) => {
+      setPresets((prev) =>
+        prev.map((p) => (p.id === presetId ? { ...p, enabled } : p)),
+      );
+    },
+    [setPresets],
+  );
 
   const createPreset = useCallback(
     (name: string, description = ''): KeywordPreset => {
@@ -88,6 +125,7 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
         id: `preset-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         name: name.trim() || 'ชุดคำสำคัญใหม่',
         description: description.trim(),
+        enabled: true,
         rules: [],
         createdAt: Date.now(),
       };
@@ -132,6 +170,7 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
         ...target,
         id: `preset-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         name: `${target.name} (สำเนา)`,
+        enabled: target.enabled !== false,
         createdAt: Date.now(),
         rules: target.rules.map((r) => ({
           ...r,
@@ -249,9 +288,9 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
       const clean = color.trim().toLowerCase();
       if (!clean) return;
       setCustomColors((prev) => {
-        if (prev.includes(clean)) return prev;
-        // Keep at most 10 recent custom colors
-        return [clean, ...prev.filter((c) => c !== clean)].slice(0, 10);
+        const filtered = prev.filter((c) => c !== clean);
+        // Append to the end
+        return [...filtered, clean];
       });
     },
     [setCustomColors],
@@ -278,9 +317,12 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
       isEnabled,
       activePreset,
       activeRules,
+      enabledPresetsCount,
       customColors,
       setIsEnabled,
       toggleEnabled,
+      togglePresetEnabled,
+      setPresetEnabled,
       setActivePresetId,
       createPreset,
       updatePreset,
@@ -299,9 +341,12 @@ export function HighlightProvider({ children }: { children: ReactNode }) {
       isEnabled,
       activePreset,
       activeRules,
+      enabledPresetsCount,
       customColors,
       setIsEnabled,
       toggleEnabled,
+      togglePresetEnabled,
+      setPresetEnabled,
       setActivePresetId,
       createPreset,
       updatePreset,
