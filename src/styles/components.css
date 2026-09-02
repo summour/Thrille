@@ -883,6 +883,15 @@
   text-decoration-color: currentColor;
 }
 
+.hl--circle {
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin: 0 1.5px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 /* --------------------------- Highlight Manager Sheet ----------------------- */
 .sheet-backdrop {
   position: fixed;
@@ -1140,8 +1149,9 @@
 .sheet-style-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 2px 0 4px;
+  width: 100%;
+  gap: 0;
+  padding: 4px 0 6px;
 }
 
 .sheet-style-group {
@@ -1150,11 +1160,33 @@
   gap: 6px;
 }
 
+.sheet-style-group--colors {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 4px 4px 4px 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.sheet-style-group--colors::-webkit-scrollbar {
+  display: none;
+}
+
 .sheet-style-divider {
   width: 1px;
-  height: 20px;
+  height: 22px;
   background: var(--line);
-  margin: 0 2px;
+  margin: 0 12px;
+  flex-shrink: 0;
+}
+
+.sheet-style-group--lines {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 4px 4px;
 }
 
 /* Color swatch buttons */
@@ -1171,6 +1203,7 @@
   transition: transform 0.12s ease, box-shadow 0.12s ease;
   position: relative;
   color: #1a1a1a;
+  flex-shrink: 0;
 }
 
 .sheet-color-btn:active {
@@ -1219,6 +1252,51 @@
 }
 
 /* Color Wheel Picker Button */
+.sheet-custom-color-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sheet-custom-color-del {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 15px;
+  height: 15px;
+  border-radius: var(--radius-pill);
+  background: var(--fg);
+  color: var(--bg);
+  border: 1.5px solid var(--bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.12s ease;
+  z-index: 3;
+}
+
+.sheet-custom-color-wrap:hover .sheet-custom-color-del,
+.sheet-custom-color-del.is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.sheet-custom-color-del:hover {
+  background: #ef4444;
+  color: #ffffff;
+  transform: scale(1.18);
+}
+
+.sheet-custom-color-del:active {
+  transform: scale(0.9);
+}
+
 .sheet-color-wheel-btn {
   width: 28px;
   height: 28px;
@@ -1282,6 +1360,7 @@
   cursor: pointer;
   transition: all 0.12s ease;
   padding: 0;
+  flex-shrink: 0;
 }
 
 .sheet-line-btn:active {
