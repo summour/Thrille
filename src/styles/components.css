@@ -495,7 +495,9 @@
   touch-action: pan-y;
   will-change: transform, opacity;
   transform-origin: 50% 120%;
-  user-select: auto;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .swipe-card-wrapper.is-animating {
@@ -1542,3 +1544,4 @@
     animation: none !important;
   }
 }
+
