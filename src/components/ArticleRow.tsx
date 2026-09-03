@@ -1,7 +1,7 @@
 import { BookmarkButton } from '@/components/BookmarkButton';
 import { Highlight } from '@/components/Highlight';
 import { NavRow } from '@/components/NavRow';
-import { getArticlePreview, getLawIdForArticle, getLawMeta } from '@/lib/lawIndex';
+import { cleanArticleId, defaultLawId, getArticlePreview, getLawIdForArticle, getLawMeta } from '@/lib/lawIndex';
 import { truncate } from '@/lib/format';
 import { routes } from '@/navigation/routes';
 
@@ -15,10 +15,12 @@ interface ArticleRowProps {
 export function ArticleRow({ articleId, query, lawId, showLawCode = false }: ArticleRowProps) {
   const resolvedLawId = getLawIdForArticle(articleId, lawId);
   const lawMeta = getLawMeta(resolvedLawId);
+  const cleanId = cleanArticleId(articleId);
+  const bookmarkId = resolvedLawId === defaultLawId ? cleanId : `${resolvedLawId}:${cleanId}`;
 
   return (
     <NavRow
-      to={routes.article(articleId, resolvedLawId)}
+      to={routes.article(cleanId, resolvedLawId)}
       title={
         <>
           {showLawCode && (
@@ -34,20 +36,30 @@ export function ArticleRow({ articleId, query, lawId, showLawCode = false }: Art
               [{lawMeta.code}]
             </span>
           )}
-          มาตรา <Highlight text={articleId} query={query} />
+          {cleanId === 'คำปรารภ' ? (
+            <Highlight text="คำปรารภ" query={query} />
+          ) : (
+            <>
+              มาตรา <Highlight text={cleanId} query={query} />
+            </>
+          )}
         </>
       }
       subtitle={
         <Highlight
-          text={truncate(getArticlePreview(articleId, resolvedLawId))}
+          text={truncate(getArticlePreview(cleanId, resolvedLawId))}
           query={query}
         />
       }
       trailing={
         <BookmarkButton
           kind="article"
-          id={articleId}
-          addedMessage={`บันทึกมาตรา ${articleId} (${lawMeta.code})`}
+          id={bookmarkId}
+          addedMessage={
+            cleanId === 'คำปรารภ'
+              ? `บันทึกคำปรารภ (${lawMeta.code})`
+              : `บันทึกมาตรา ${cleanId} (${lawMeta.code})`
+          }
         />
       }
     />

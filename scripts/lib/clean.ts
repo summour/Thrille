@@ -12,6 +12,7 @@ const NOISE_PATTERNS: RegExp[] = [
   /^ราชกิจจานุเบกษา/,
   /^[๐-๙\d]{1,3}$/, // เลขหน้าลอย ๆ
   /^_{3,}$/,
+  /^\[[๐-๙\d]+\]/, // บรรทัดเชิงอรรถ เช่น [1] ราชกิจจานุเบกษา..., [5] มาตรา ๑...
 ];
 
 const ZERO_WIDTH = /[\u200B-\u200D\uFEFF\u00AD]/g;
@@ -22,10 +23,10 @@ export function cleanLines(rawText: string): string[] {
     .replace(/\r\n?/g, '\n')
     .replace(ZERO_WIDTH, '')
     .replace(/\u00A0/g, ' ')
-    .replace(/\[[๐-๙\d]+\]/g, '') // ลบเลขเชิงอรรถ เช่น [2], [๓]
     .split('\n')
     .map((line) => line.replace(/\s+/g, ' ').trim())
-    .filter((line) => line.length === 0 || !NOISE_PATTERNS.some((pattern) => pattern.test(line)));
+    .filter((line) => line.length === 0 || !NOISE_PATTERNS.some((pattern) => pattern.test(line)))
+    .map((line) => line.replace(/\[[๐-๙\d]+\]/g, '')); // ลบเลขเชิงอรรถในบรรทัด เช่น [2], [๓] หลังจากกรองบรรทัดเชิงอรรถแล้ว
 }
 
 /** ใช้ตรวจว่าบรรทัดว่างหรือไม่ ก่อนถูก filter ออก (สำหรับแบ่งย่อหน้า) */

@@ -17,14 +17,23 @@ import { build, type BuiltArticle, type BuiltNode } from './lib/build';
 import { validate } from './lib/validate';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const RAW_DIR = join(ROOT, 'data-source', 'raw');
-const OUT_DIR = join(ROOT, 'src', 'data', 'generated');
-const MANIFEST = join(ROOT, 'data-source', 'manifest.json');
 
 const args = process.argv.slice(2);
 const checkOnly = args.includes('--check');
+const lawArg = args.find((a) => a.startsWith('--law='))?.split('=')[1] ?? 'ccc';
+const isCpc = lawArg === 'cpc';
+
+const RAW_DIR = join(ROOT, 'data-source', isCpc ? 'cpc' : 'raw');
+const OUT_DIR = join(ROOT, 'src', 'data', isCpc ? 'generated-cpc' : 'generated');
+const MANIFEST = join(ROOT, 'data-source', isCpc ? 'cpc/manifest.json' : 'manifest.json');
 
 function main() {
+  console.log(
+    isCpc
+      ? '▸ [ป.วิ.พ.] นำเข้าประมวลกฎหมายวิธีพิจารณาความแพ่ง'
+      : '▸ [ป.พ.พ.] นำเข้าประมวลกฎหมายแพ่งและพาณิชย์',
+  );
+
   if (!existsSync(RAW_DIR)) {
     console.error(`✗ ไม่พบโฟลเดอร์ ${RAW_DIR}`);
     process.exit(1);
@@ -35,7 +44,7 @@ function main() {
     .sort();
 
   if (files.length === 0) {
-    console.error('✗ ไม่พบไฟล์ .txt ใน data-source/raw/ — ดูวิธีใช้ที่ docs/DATA_IMPORT.md');
+    console.error(`✗ ไม่พบไฟล์ .txt ใน ${RAW_DIR}`);
     process.exit(1);
   }
 
@@ -66,7 +75,7 @@ function main() {
   writeJson(join(OUT_DIR, 'importReport.json'), report);
   touchManifest(report.articleCount);
 
-  console.log(`\n✓ เขียนไฟล์แล้วที่ src/data/generated/`);
+  console.log(`\n✓ เขียนไฟล์แล้วที่ ${OUT_DIR}`);
   console.log('  ขั้นถัดไป: npm run typecheck && npm run dev');
 }
 

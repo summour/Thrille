@@ -9,8 +9,10 @@ export type Token =
   | { kind: 'break'; line: number };
 
 const HEADING_RE = {
+  คำปรารภ: /^คำปรารภ(?:\s*(.*))?$/,
   ข้อความเบื้องต้น: /^ข้อความเบื้องต้น(?:\s*(.*))?$/,
   บรรพ: /^บรรพ\s*([๐-๙\d]+)\s*(.*)$/,
+  ภาค: /^ภาค\s*([๐-๙\d]+)\s*(.*)$/,
   ลักษณะ: /^ลักษณะ\s*([๐-๙\d]+)\s*(.*)$/,
   หมวด: /^หมวด\s*([๐-๙\d]+)\s*(.*)$/,
   ส่วน: /^ส่วนที่\s*([๐-๙\d]+)\s*(.*)$/,
@@ -33,10 +35,19 @@ function isStructuralLine(line: string): boolean {
 
 export function tokenize(lines: string[]): Token[] {
   const tokens: Token[] = [];
+  let inPreamble = false;
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     const lineNo = i + 1;
+
+    // หยุดเมื่อถึงท้ายตัวบท เช่น ตารางท้ายประมวลฯ หรือ บัญชีพระราชบัญญัติแก้ไขเพิ่มเติม
+    if (
+      /^ตาราง\s*[๐-๙\d]+/.test(line) ||
+      /^(?:พระราชบัญญัติแก้ไขเพิ่มเติม|รัฐธรรมนูญแก้ไขเพิ่มเติม)/.test(line)
+    ) {
+      break;
+    }
 
     if (line.length === 0) {
       tokens.push({ kind: 'break', line: lineNo });
@@ -52,18 +63,24 @@ export function tokenize(lines: string[]): Token[] {
       const match = pattern.exec(line);
       if (!match) continue;
 
+      if (level === 'คำปรารภ') {
+        inPreamble = true;
+      } else if (level === 'บรรพ' || level === 'ภาค' || level === 'ลักษณะ' || level === 'หมวด') {
+        inPreamble = false;
+      }
+
       let number = '';
       let title = '';
 
-      if (level === 'ข้อความเบื้องต้น') {
+      if (level === 'คำปรารภ' || level === 'ข้อความเบื้องต้น') {
         number = '';
-        title = (match[1] ?? '').trim();
+        title = (match[1] ?? '').trim() || (level === 'คำปรารภ' ? 'คำปรารภ' : '');
       } else {
         number = toArabicDigits(match[1]);
         title = (match[2] ?? '').trim();
       }
 
-      if (!title && level !== 'ข้อความเบื้องต้น') {
+      if (!title && level !== 'ข้อความเบื้องต้น' && level !== 'คำปรารภ') {
         const next = lines.slice(i + 1).find((candidate) => candidate.length > 0);
         if (next && !isStructuralLine(next)) {
           title = next;
@@ -83,19 +100,21 @@ export function tokenize(lines: string[]): Token[] {
     }
     if (matchedHeading) continue;
 
-    // 2) มาตรา
-    const articleMatch = ARTICLE_LINE_RE.exec(line);
-    if (articleMatch) {
-      const parsed = parseArticleNumber(articleMatch[1]);
-      if (parsed) {
-        tokens.push({
-          kind: 'article',
-          id: parsed.id,
-          sortKey: parsed.sortKey,
-          firstText: articleMatch[2].trim(),
-          line: lineNo,
-        });
-        continue;
+    // 2) มาตรา (ยกเว้นเมื่ออยู่ในคำปรารภ/พ.ร.บ.ให้ใช้ฯ ให้ถือเป็นเนื้อหาข้อความของคำปรารภ)
+    if (!inPreamble) {
+      const articleMatch = ARTICLE_LINE_RE.exec(line);
+      if (articleMatch) {
+        const parsed = parseArticleNumber(articleMatch[1]);
+        if (parsed) {
+          tokens.push({
+            kind: 'article',
+            id: parsed.id,
+            sortKey: parsed.sortKey,
+            firstText: articleMatch[2].trim(),
+            line: lineNo,
+          });
+          continue;
+        }
       }
     }
 

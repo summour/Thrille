@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "import:law": "tsx scripts/import.ts",
-    "import:law:check": "tsx scripts/import.ts --check"
+    "import:law:check": "tsx scripts/import.ts --check",
+    "import:cpc": "tsx scripts/import.ts --law=cpc",
+    "import:cpc:check": "tsx scripts/import.ts --law=cpc --check"
   },
   "dependencies": {
     "react": "^18.3.1",

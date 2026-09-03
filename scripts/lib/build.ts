@@ -18,8 +18,10 @@ export interface BuiltNode {
 }
 
 const LEVEL_DEPTH: Record<LawLevel, number> = {
+  คำปรารภ: 0,
   ข้อความเบื้องต้น: 0,
   บรรพ: 0,
+  ภาค: 0,
   ลักษณะ: 1,
   หมวด: 2,
   ส่วน: 3,
@@ -59,6 +61,19 @@ export function build(tokens: Token[]): BuildResult {
           children: [],
           articleIds: [],
         };
+
+        // ถ้าเป็นคำปรารภ ให้สร้าง article ตัวแทนเพื่อเก็บเนื้อหาคำปรารภ
+        if (token.level === 'คำปรารภ') {
+          const article: BuiltArticle = {
+            id: 'คำปรารภ',
+            sortKey: [-1, 0],
+            paragraphs: [],
+            sourceLine: token.line,
+          };
+          articles.set('คำปรารภ', article);
+          node.articleIds.push('คำปรารภ');
+          currentArticle = article;
+        }
 
         // หาโหนดแม่ที่ใกล้ที่สุดที่ตื้นกว่า — รองรับการข้ามระดับ
         let parent: BuiltNode | null = null;

@@ -79,6 +79,7 @@ export function searchAll(rawQuery: string, lawId?: string): SearchResults {
   const query = rawQuery.trim().toLowerCase();
   if (!query) return EMPTY;
 
+  const normalizedQuery = query.replace(/อัฎฐ/g, 'อัฏฐ');
   const allArticles = getCachedArticles();
   const matchedArticles: { item: SearchArticleItem; score: number }[] = [];
 
@@ -86,14 +87,15 @@ export function searchAll(rawQuery: string, lawId?: string): SearchResults {
     const art = allArticles[i];
     if (lawId && art.lawId !== lawId) continue;
 
+    const idNormalized = art.idLower.replace(/อัฎฐ/g, 'อัฏฐ');
     let score = 0;
-    if (art.idLower === query) {
+    if (art.idLower === query || idNormalized === normalizedQuery) {
       score = 4; // ตรงกับเลขมาตราเป๊ะ
-    } else if (art.idLower.startsWith(query)) {
+    } else if (art.idLower.startsWith(query) || idNormalized.startsWith(normalizedQuery)) {
       score = 3; // ขึ้นต้นด้วยเลขมาตรา เช่น "15" -> "150"
-    } else if (art.idLower.includes(query)) {
+    } else if (art.idLower.includes(query) || idNormalized.includes(normalizedQuery)) {
       score = 2; // เลขมาตรารองรับ query
-    } else if (art.fullTextLower.includes(query)) {
+    } else if (art.fullTextLower.includes(query) || art.fullTextLower.includes(normalizedQuery)) {
       score = 1; // พบในเนื้อหาตัวบท
     }
 

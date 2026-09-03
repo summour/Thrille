@@ -12,12 +12,14 @@ import { SmartArticleText } from '@/components/SmartArticleText';
 import { PageHeader } from '@/layouts/PageHeader';
 import { nodeLabel } from '@/lib/format';
 import {
+  defaultLawId,
   getAdjacentArticleIds,
   getArticle,
   getArticleNode,
   getDecisionsForArticle,
   getLawIdForArticle,
   getLawMeta,
+  setLastActiveLawId,
 } from '@/lib/lawIndex';
 import { routes } from '@/navigation/routes';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -50,9 +52,15 @@ export function ArticlePage() {
   const isHorizontalSwipeRef = useRef(false);
   const isVerticalScrollRef = useRef(false);
 
+  const bookmarkId = article
+    ? resolvedLawId === defaultLawId
+      ? article.id
+      : `${resolvedLawId}:${article.id}`
+    : '';
+
   const handleDoubleTap = () => {
     if (!article) return;
-    toggleBookmark('article', article.id);
+    toggleBookmark('article', bookmarkId);
   };
 
   const node = article ? getArticleNode(article.id, resolvedLawId) : undefined;
@@ -60,6 +68,12 @@ export function ArticlePage() {
   const { previous, next } = article
     ? getAdjacentArticleIds(article.id, resolvedLawId)
     : { previous: undefined, next: undefined };
+
+  useEffect(() => {
+    if (resolvedLawId) {
+      setLastActiveLawId(resolvedLawId);
+    }
+  }, [resolvedLawId]);
 
   useEffect(() => {
     if (article) markAsRead(article.id);
@@ -220,10 +234,12 @@ export function ArticlePage() {
       ? 'next'
       : null;
 
+  const displayTitle = article.id === 'คำปรารภ' ? 'คำปรารภ' : `มาตรา ${article.id}`;
+
   return (
     <>
       <PageHeader
-        title={`มาตรา ${article.id}`}
+        title={displayTitle}
         backTo={node ? routes.node(node.id, resolvedLawId) : routes.toc(resolvedLawId)}
         actions={
           <>
@@ -252,8 +268,12 @@ export function ArticlePage() {
             </button>
             <BookmarkButton
               kind="article"
-              id={article.id}
-              addedMessage={`บันทึกมาตรา ${article.id} (${law.code})`}
+              id={bookmarkId}
+              addedMessage={
+                article.id === 'คำปรารภ'
+                  ? `บันทึกคำปรารภ (${law.code})`
+                  : `บันทึกมาตรา ${article.id} (${law.code})`
+              }
             />
           </>
         }
@@ -277,11 +297,11 @@ export function ArticlePage() {
           }`}
           style={cardStyle}
         >
-          {node ? <Breadcrumbs nodeId={node.id} current={`มาตรา ${article.id}`} /> : null}
+          {node ? <Breadcrumbs nodeId={node.id} current={displayTitle} /> : null}
 
           <div className="article-head">
             <p className="article-number">
-              มาตรา {article.id}
+              {displayTitle}
               <span
                 style={{
                   fontSize: '12px',
@@ -352,6 +372,7 @@ export function ArticlePage() {
         previousArticleId={previous}
         nextArticleId={next}
         activeDirection={activeSwipeDirection}
+        lawId={resolvedLawId}
       />
 
       <HighlightManagerSheet

@@ -19,6 +19,7 @@ export const ORDINAL_WORDS: Record<string, number> = {
   ฉ: 6,
   สัตต: 7,
   อัฏฐ: 8,
+  อัฎฐ: 8,
   นว: 9,
   ทศ: 10,
   เอกาทศ: 11,
@@ -56,7 +57,8 @@ export function parseArticleNumber(raw: string): ParsedArticleNumber | null {
     return { id: `${main}/${slashSub}`, sortKey: [Number(main), Number(slashSub)] };
   }
   if (word) {
-    return { id: `${main} ${word}`, sortKey: [Number(main), ORDINAL_WORDS[word]] };
+    const normalizedWord = word === 'อัฎฐ' ? 'อัฏฐ' : word;
+    return { id: `${main} ${normalizedWord}`, sortKey: [Number(main), ORDINAL_WORDS[word]] };
   }
   return { id: main, sortKey: [Number(main), 1] };
 }

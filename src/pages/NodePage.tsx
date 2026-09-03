@@ -1,10 +1,11 @@
+import { useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { ArticleRow } from '@/components/ArticleRow';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { NavRow } from '@/components/NavRow';
 import { PageHeader } from '@/layouts/PageHeader';
 import { nodeLabel } from '@/lib/format';
-import { getChildNodes, getLawIdForNode, getNode } from '@/lib/lawIndex';
+import { getChildNodes, getLawIdForNode, getNode, setLastActiveLawId } from '@/lib/lawIndex';
 import { routes } from '@/navigation/routes';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -19,9 +20,15 @@ export function NodePage() {
   const lawIdParam = searchParams.get('law') || undefined;
   const node = getNode(nodeId);
 
-  if (!node) return <NotFoundPage message="ไม่พบหมวดหมู่ที่ระบุ" />;
+  const resolvedLawId = node ? getLawIdForNode(node.id) || lawIdParam : lawIdParam;
 
-  const resolvedLawId = getLawIdForNode(node.id) || lawIdParam;
+  useEffect(() => {
+    if (resolvedLawId) {
+      setLastActiveLawId(resolvedLawId);
+    }
+  }, [resolvedLawId]);
+
+  if (!node) return <NotFoundPage message="ไม่พบหมวดหมู่ที่ระบุ" />;
   const parentBackTo = node.parentId
     ? routes.node(node.parentId, resolvedLawId)
     : routes.toc(resolvedLawId);
@@ -59,7 +66,9 @@ export function NodePage() {
         {node.articleIds.length > 0 && (
           <>
             <p className="eyebrow">
-              มาตรา {node.articleIds[0]}–{node.articleIds[node.articleIds.length - 1]}
+              {node.type === 'คำปรารภ' || (node.articleIds.length === 1 && node.articleIds[0] === 'คำปรารภ')
+                ? 'คำปรารภ'
+                : `มาตรา ${node.articleIds[0]}–${node.articleIds[node.articleIds.length - 1]}`}
             </p>
             <div className="list">
               {node.articleIds.map((articleId) => (

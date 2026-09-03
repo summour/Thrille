@@ -49,6 +49,18 @@ export function validate(result: BuildResult): ImportReport {
   walk(tree);
 
   nodes.forEach((node) => {
+    const seen = new Set<string>();
+    node.articleIds.forEach((id) => {
+      if (seen.has(id)) {
+        issues.push({
+          level: 'error',
+          code: 'DUPLICATE_ARTICLE',
+          message: `มาตรา ${id} ปรากฏซ้ำใน ${node.type} ${node.number} ${node.title}`,
+        });
+      }
+      seen.add(id);
+    });
+
     if (node.children.length === 0 && node.articleIds.length === 0) {
       issues.push({
         level: 'warning',
@@ -56,7 +68,7 @@ export function validate(result: BuildResult): ImportReport {
         message: `${node.type} ${node.number} ${node.title} ว่างเปล่า`,
       });
     }
-    if (!node.title && node.type !== 'ข้อความเบื้องต้น') {
+    if (!node.title && node.type !== 'ข้อความเบื้องต้น' && node.type !== 'คำปรารภ') {
       issues.push({
         level: 'warning',
         code: 'MISSING_TITLE',
@@ -66,7 +78,10 @@ export function validate(result: BuildResult): ImportReport {
   });
 
   // 4) เลขมาตราขาดช่วง (เตือนเฉยๆ — กฎหมายมีมาตราที่ถูกยกเลิกจริง)
-  const mains = [...articles.values()].map((a) => a.sortKey[0]).sort((a, b) => a - b);
+  const mains = [...articles.values()]
+    .map((a) => a.sortKey[0])
+    .filter((n) => n > 0)
+    .sort((a, b) => a - b);
   for (let i = 1; i < mains.length; i += 1) {
     const gap = mains[i] - mains[i - 1];
     if (gap > 1) {
@@ -80,7 +95,7 @@ export function validate(result: BuildResult): ImportReport {
 
   return {
     generatedAt: new Date().toISOString(),
-    bookCount: tree.filter((n) => n.type === 'บรรพ').length,
+    bookCount: tree.filter((n) => n.type === 'บรรพ' || n.type === 'ภาค').length,
     nodeCount: nodes.length,
     articleCount: articles.size,
     issues,

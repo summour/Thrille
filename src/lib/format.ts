@@ -1,7 +1,10 @@
 import type { IndexedLawNode } from '@/types/law';
 
-/** ป้ายชื่อโหนด เช่น "ข้อความเบื้องต้น" / "บรรพ 1 หลักทั่วไป" / "ส่วนที่ 1 สภาพบุคคล" */
+/** ป้ายชื่อโหนด เช่น "คำปรารภ" / "ข้อความเบื้องต้น" / "บรรพ 1 หลักทั่วไป" / "ส่วนที่ 1 สภาพบุคคล" */
 export function nodeLabel(node: Pick<IndexedLawNode, 'type' | 'number' | 'title'>): string {
+  if (node.type === 'คำปรารภ') {
+    return node.title && node.title !== 'คำปรารภ' ? `คำปรารภ ${node.title}`.trim() : 'คำปรารภ';
+  }
   if (node.type === 'ข้อความเบื้องต้น') {
     return node.title ? `ข้อความเบื้องต้น ${node.title}`.trim() : 'ข้อความเบื้องต้น';
   }
@@ -9,8 +12,11 @@ export function nodeLabel(node: Pick<IndexedLawNode, 'type' | 'number' | 'title'
   return `${prefix} ${node.number} ${node.title}`.trim();
 }
 
-/** ป้ายสั้นสำหรับ breadcrumb เช่น "ข้อความเบื้องต้น" / "บรรพ 1" */
+/** ป้ายสั้นสำหรับ breadcrumb เช่น "คำปรารภ" / "ข้อความเบื้องต้น" / "บรรพ 1" */
 export function nodeShortLabel(node: Pick<IndexedLawNode, 'type' | 'number'>): string {
+  if (node.type === 'คำปรารภ') {
+    return 'คำปรารภ';
+  }
   if (node.type === 'ข้อความเบื้องต้น') {
     return 'ข้อความเบื้องต้น';
   }
@@ -25,6 +31,7 @@ const ORDINAL_WORDS: Record<string, number> = {
   ฉ: 6,
   สัตต: 7,
   อัฏฐ: 8,
+  อัฎฐ: 8,
   นว: 9,
   ทศ: 10,
   เอกาทศ: 11,
@@ -35,6 +42,7 @@ const ORDINAL_WORDS: Record<string, number> = {
 };
 
 function parseSortKey(id: string): [number, number] {
+  if (id === 'คำปรารภ') return [-1, 0];
   const [head, slashSub] = id.split('/');
   const [mainText, word] = head.trim().split(/\s+/);
   const main = Number(mainText) || 0;

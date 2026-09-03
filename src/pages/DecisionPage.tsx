@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { BookmarkButton } from '@/components/BookmarkButton';
 import { SectionHeading } from '@/components/SectionHeading';
 import { PageHeader } from '@/layouts/PageHeader';
-import { getDecision } from '@/lib/lawIndex';
+import { getDecision, getLawIdForArticle } from '@/lib/lawIndex';
 import { routes } from '@/navigation/routes';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -14,7 +14,9 @@ export function DecisionPage() {
   if (!decision) return <NotFoundPage message="ไม่พบคำพิพากษาที่ระบุ" />;
 
   const firstArticle = decision.articleIds[0];
-  const backTo = firstArticle ? routes.article(firstArticle) : routes.home;
+  const backTo = firstArticle
+    ? routes.article(firstArticle, getLawIdForArticle(firstArticle))
+    : routes.home;
 
   return (
     <>
@@ -40,7 +42,11 @@ export function DecisionPage() {
           <dd>
             <div className="tags">
               {decision.articleIds.map((articleId) => (
-                <Link key={articleId} to={routes.article(articleId)} className="tag tag--link">
+                <Link
+                  key={articleId}
+                  to={routes.article(articleId, getLawIdForArticle(articleId))}
+                  className="tag tag--link"
+                >
                   มาตรา {articleId}
                 </Link>
               ))}

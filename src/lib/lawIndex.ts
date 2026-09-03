@@ -6,7 +6,7 @@ import type { Article, Decision, IndexedLawNode, LawCodeMeta, LawNode } from '@/
 export { defaultLawId };
 
 /**
- * In-memory index รองรับทั้งประมวลกฎหมายแพ่งและพาณิชย์ และกฎหมายฉบับอื่น ๆ (เช่น ป.อ., ป.วิ.พ., ป.วิ.อ.)
+ * In-memory index รองรับทั้งประมวลกฎหมายแพ่งและพาณิชย์ และกฎหมายฉบับอื่น ๆ (เช่น ป.วิ.พ., รธน.)
  * Pure in-memory / offline-first ตามกฎ AGENTS.md
  */
 
@@ -100,22 +100,59 @@ export function getLawIdForNode(nodeId: string | undefined): string {
   return lawIdByNodeId.get(nodeId) ?? defaultLawId;
 }
 
+export function cleanArticleId(id: string): string {
+  let cleaned = id;
+  if (cleaned.includes(':')) {
+    cleaned = cleaned.split(':')[1];
+  }
+  return cleaned.replace(/อัฎฐ/g, 'อัฏฐ');
+}
+
+export function getLastActiveLawId(): string {
+  try {
+    const saved = localStorage.getItem('clr.active.law');
+    if (saved && lawPackages[saved]) return saved;
+  } catch {
+    // ignore
+  }
+  return defaultLawId;
+}
+
+export function setLastActiveLawId(lawId: string): void {
+  try {
+    if (lawPackages[lawId]) {
+      localStorage.setItem('clr.active.law', lawId);
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export function getLawIdForArticle(articleId: string | undefined, hintLawId?: string): string {
   if (!articleId) return defaultLawId;
-  if (hintLawId && lawPackages[hintLawId]?.articles[articleId]) {
+  if (articleId.includes(':')) {
+    const [prefix] = articleId.split(':');
+    if (lawPackages[prefix]) return prefix;
+  }
+  const cleanId = cleanArticleId(articleId);
+  if (hintLawId && lawPackages[hintLawId]?.articles[cleanId]) {
     return hintLawId;
   }
+  const lastActive = getLastActiveLawId();
+  if (lastActive && lawPackages[lastActive]?.articles[cleanId]) {
+    return lastActive;
+  }
   // Check default first
-  if (lawPackages[defaultLawId]?.articles[articleId]) {
+  if (lawPackages[defaultLawId]?.articles[cleanId]) {
     return defaultLawId;
   }
   // Check other laws
   for (const lawId of Object.keys(lawPackages)) {
-    if (lawPackages[lawId].articles[articleId]) {
+    if (lawPackages[lawId].articles[cleanId]) {
       return lawId;
     }
   }
-  return hintLawId || defaultLawId;
+  return hintLawId || lastActive || defaultLawId;
 }
 
 /* ------------------------------- Node access ------------------------------ */
@@ -158,14 +195,22 @@ export function getAllNodes(lawId?: string): IndexedLawNode[] {
 
 export function getArticle(articleId: string | undefined, lawId?: string): Article | undefined {
   if (!articleId) return undefined;
-  const targetLawId = getLawIdForArticle(articleId, lawId);
-  return lawPackages[targetLawId]?.articles[articleId];
+  const cleanId = cleanArticleId(articleId);
+  const targetLawId =
+    lawId && lawPackages[lawId]?.articles[cleanId]
+      ? lawId
+      : getLawIdForArticle(articleId, lawId);
+  return lawPackages[targetLawId]?.articles[cleanId];
 }
 
 export function getArticleNode(articleId: string, lawId?: string): IndexedLawNode | undefined {
-  const targetLawId = getLawIdForArticle(articleId, lawId);
+  const cleanId = cleanArticleId(articleId);
+  const targetLawId =
+    lawId && nodeIdByArticleIdByLaw.has(lawId)
+      ? lawId
+      : getLawIdForArticle(articleId, lawId);
   const articleMap = nodeIdByArticleIdByLaw.get(targetLawId);
-  const nodeId = articleMap?.get(articleId);
+  const nodeId = articleMap?.get(cleanId);
   return getNode(nodeId);
 }
 
@@ -180,9 +225,13 @@ export function getAdjacentArticleIds(
   previous?: string;
   next?: string;
 } {
-  const targetLawId = getLawIdForArticle(articleId, lawId);
+  const cleanId = cleanArticleId(articleId);
+  const targetLawId =
+    lawId && orderedArticleIdsByLaw.has(lawId)
+      ? lawId
+      : getLawIdForArticle(articleId, lawId);
   const list = orderedArticleIdsByLaw.get(targetLawId) ?? [];
-  const index = list.indexOf(articleId);
+  const index = list.indexOf(cleanId);
   if (index === -1) return {};
   return {
     previous: list[index - 1],

@@ -1,8 +1,9 @@
+import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { NavRow } from '@/components/NavRow';
 import { PageHeader } from '@/layouts/PageHeader';
 import { nodeLabel } from '@/lib/format';
-import { defaultLawId, getAllLaws, getLawMeta, getRootNodes } from '@/lib/lawIndex';
+import { defaultLawId, getAllLaws, getLawMeta, getRootNodes, setLastActiveLawId } from '@/lib/lawIndex';
 import { routes } from '@/navigation/routes';
 
 export function TocPage() {
@@ -11,6 +12,12 @@ export function TocPage() {
   const allLaws = getAllLaws();
   const currentLawId =
     rawLawId && allLaws.some((l) => l.id === rawLawId) ? rawLawId : defaultLawId;
+
+  useEffect(() => {
+    if (currentLawId) {
+      setLastActiveLawId(currentLawId);
+    }
+  }, [currentLawId]);
 
   const currentLaw = getLawMeta(currentLawId);
   const roots = getRootNodes(currentLawId);
@@ -35,7 +42,9 @@ export function TocPage() {
               to={routes.node(node.id, currentLawId)}
               title={nodeLabel(node)}
               subtitle={
-                node.childIds.length > 0
+                node.type === 'คำปรารภ'
+                  ? 'บทนำและคำปรารภ'
+                  : node.childIds.length > 0
                   ? `${node.totalArticles} มาตรา · ${node.childIds.length} ลักษณะ`
                   : `${node.totalArticles} มาตรา`
               }
