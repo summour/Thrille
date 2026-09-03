@@ -1,4 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+import fs from 'fs';
+import sharp from 'sharp';
+
+// Exact SVG of Thrille PWA Icon
+const svg512 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <!-- Filter for crisp comic double-outline effect -->
     <style>
@@ -205,4 +209,34 @@
       " />
     </g>
   </g>
-</svg>
+</svg>`;
+
+async function build() {
+  fs.writeFileSync('public/icon-thrille.svg', svg512);
+  fs.writeFileSync('public/favicon.svg', svg512);
+
+  // Generate PNG sizes for PWA
+  await sharp(Buffer.from(svg512))
+    .resize(192, 192)
+    .png()
+    .toFile('public/pwa-192x192.png');
+
+  await sharp(Buffer.from(svg512))
+    .resize(512, 512)
+    .png()
+    .toFile('public/pwa-512x512.png');
+
+  await sharp(Buffer.from(svg512))
+    .resize(512, 512)
+    .png()
+    .toFile('public/pwa-maskable-512x512.png');
+
+  await sharp(Buffer.from(svg512))
+    .resize(180, 180)
+    .png()
+    .toFile('public/apple-touch-icon.png');
+
+  console.log('Icons generated successfully!');
+}
+
+build().catch(console.error);
