@@ -1,51 +1,108 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArticleRow } from '@/components/ArticleRow';
 import { DecisionRow } from '@/components/DecisionRow';
 import { FilterChips } from '@/components/FilterChips';
 import { Highlight } from '@/components/Highlight';
+import { Icon } from '@/components/Icon';
 import { PageHeader } from '@/layouts/PageHeader';
 import { nodeLabel, nodeShortLabel } from '@/lib/format';
 import { getLawIdForNode, getLawMeta, getNodePath } from '@/lib/lawIndex';
 import { searchAll, type SearchScope } from '@/lib/search';
 import { routes } from '@/navigation/routes';
 
+const ARTICLE_PAGE_SIZE = 40;
+const NODE_PAGE_SIZE = 30;
+
 export function SearchPage() {
   const [params, setParams] = useSearchParams();
-  const [query, setQuery] = useState(params.get('q') ?? '');
+  const initialQuery = params.get('q') ?? '';
+  const [inputValue, setInputValue] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [scope, setScope] = useState<SearchScope>('all');
+  const [visibleArticleCount, setVisibleArticleCount] = useState(ARTICLE_PAGE_SIZE);
+  const [visibleNodeCount, setVisibleNodeCount] = useState(NODE_PAGE_SIZE);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  /** เก็บคำค้นไว้ใน URL เพื่อให้แชร์/ย้อนกลับได้ */
+  // Debounce การค้นหาเพื่อให้การพิมพ์บนคีย์บอร์ดมือถือลื่นไหล 60fps ไม่ค้าง
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setParams(query ? { q: query } : {}, { replace: true });
-    }, 250);
-    return () => window.clearTimeout(timeout);
-  }, [query, setParams]);
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(inputValue);
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [inputValue]);
 
-  const results = useMemo(() => searchAll(query), [query]);
-  const trimmed = query.trim();
+  // รีเซ็ตการแบ่งหน้าเมื่อคำค้นหาเปลี่ยน
+  useEffect(() => {
+    setVisibleArticleCount(ARTICLE_PAGE_SIZE);
+    setVisibleNodeCount(NODE_PAGE_SIZE);
+  }, [debouncedQuery]);
+
+  // เก็บคำค้นไว้ใน URL อย่างปลอดภัย ไม่รบกวนจังหวะการพิมพ์
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const trimmed = debouncedQuery.trim();
+      const currentQ = params.get('q') ?? '';
+      if (trimmed !== currentQ) {
+        setParams(trimmed ? { q: trimmed } : {}, { replace: true });
+      }
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [debouncedQuery, params, setParams]);
+
+  // ใช้ deferred value เพื่อให้ React จัดการเรนเดอร์ผลลัพธ์เป็น non-blocking background task
+  const deferredQuery = useDeferredValue(debouncedQuery);
+  const results = useMemo(() => searchAll(deferredQuery), [deferredQuery]);
+  const trimmed = deferredQuery.trim();
+
+  const handleClear = useCallback(() => {
+    setInputValue('');
+    setDebouncedQuery('');
+    inputRef.current?.focus();
+  }, []);
+
   const show = (target: SearchScope) => scope === 'all' || scope === target;
+
+  const visibleArticles = results.articleItems.slice(0, visibleArticleCount);
+  const hasMoreArticles = results.articleItems.length > visibleArticleCount;
+  const remainingArticles = results.articleItems.length - visibleArticleCount;
+
+  const visibleNodes = results.nodes.slice(0, visibleNodeCount);
+  const hasMoreNodes = results.nodes.length > visibleNodeCount;
+  const remainingNodes = results.nodes.length - visibleNodeCount;
 
   return (
     <>
       <PageHeader title="ค้นหา" showBack={false} />
 
       <div className="search-bar">
-        <input
-          ref={inputRef}
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="เลขมาตรา · คำสำคัญ · ชื่อหมวด/ส่วน · เลขฎีกา"
-          aria-label="ช่องค้นหา"
-          autoComplete="off"
-        />
+        <div className="search-bar__inner">
+          <input
+            ref={inputRef}
+            type="search"
+            value={inputValue}
+            onChange={(event) => setInputValue(event.target.value)}
+            placeholder="เลขมาตรา · คำสำคัญ · ชื่อหมวด/ส่วน · เลขฎีกา"
+            aria-label="ช่องค้นหา"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck="false"
+          />
+          {inputValue ? (
+            <button
+              type="button"
+              className="search-bar__clear"
+              onClick={handleClear}
+              aria-label="ล้างข้อความค้นหา"
+            >
+              <Icon name="close" size={13} />
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <FilterChips
@@ -81,7 +138,7 @@ export function SearchPage() {
               <>
                 <p className="eyebrow">มาตรา · {results.articleItems.length}</p>
                 <div className="list">
-                  {results.articleItems.map((item) => (
+                  {visibleArticles.map((item) => (
                     <ArticleRow
                       key={`${item.lawId}-${item.id}`}
                       articleId={item.id}
@@ -90,6 +147,15 @@ export function SearchPage() {
                       query={trimmed}
                     />
                   ))}
+                  {hasMoreArticles && (
+                    <button
+                      type="button"
+                      className="load-more-row"
+                      onClick={() => setVisibleArticleCount((prev) => prev + ARTICLE_PAGE_SIZE)}
+                    >
+                      แสดงอีก {Math.min(ARTICLE_PAGE_SIZE, remainingArticles)} มาตรา (เหลือ {remainingArticles})
+                    </button>
+                  )}
                 </div>
               </>
             )}
@@ -109,7 +175,7 @@ export function SearchPage() {
               <>
                 <p className="eyebrow">สารบัญ · {results.nodes.length}</p>
                 <div className="list">
-                  {results.nodes.map((node) => {
+                  {visibleNodes.map((node) => {
                     const parents = getNodePath(node.id).slice(0, -1);
                     const lawId = getLawIdForNode(node.id);
                     const law = getLawMeta(lawId);
@@ -140,6 +206,15 @@ export function SearchPage() {
                       </div>
                     );
                   })}
+                  {hasMoreNodes && (
+                    <button
+                      type="button"
+                      className="load-more-row"
+                      onClick={() => setVisibleNodeCount((prev) => prev + NODE_PAGE_SIZE)}
+                    >
+                      แสดงอีก {Math.min(NODE_PAGE_SIZE, remainingNodes)} รายการ (เหลือ {remainingNodes})
+                    </button>
+                  )}
                 </div>
               </>
             )}

@@ -1,11 +1,11 @@
 import {
   getAllDecisions,
+  getAllLaws,
   getAllNodes,
   getArticle,
-  getLawIdForArticle,
   getOrderedArticleIds,
 } from '@/lib/lawIndex';
-import { nodeLabel } from '@/lib/format';
+import { compareArticleIds, nodeLabel } from '@/lib/format';
 import type { Decision, IndexedLawNode } from '@/types/law';
 
 export type SearchScope = 'all' | 'article' | 'decision' | 'node';
@@ -35,6 +35,41 @@ function includes(haystack: string, needle: string): boolean {
   return haystack.toLowerCase().includes(needle);
 }
 
+interface SearchableArticle {
+  id: string;
+  lawId: string;
+  idLower: string;
+  fullTextLower: string;
+}
+
+// In-memory cache of searchable articles across all laws
+let cachedArticles: SearchableArticle[] | null = null;
+
+function getCachedArticles(): SearchableArticle[] {
+  if (cachedArticles) return cachedArticles;
+
+  const result: SearchableArticle[] = [];
+  const laws = getAllLaws();
+
+  for (const law of laws) {
+    const ids = getOrderedArticleIds(law.id);
+    for (const id of ids) {
+      const art = getArticle(id, law.id);
+      const paragraphs = art?.paragraphs || [];
+      const parasLower = paragraphs.map((p) => p.toLowerCase());
+      result.push({
+        id,
+        lawId: law.id,
+        idLower: id.toLowerCase(),
+        fullTextLower: parasLower.join(' '),
+      });
+    }
+  }
+
+  cachedArticles = result;
+  return result;
+}
+
 /**
  * ค้นหาแบบ local ทั้งหมด (ไม่มี network)
  * รองรับ: เลขมาตรา / คำสำคัญในตัวบท / ชื่อบรรพ-ภาค-ลักษณะ-หมวด-ส่วน / เลขฎีกา
@@ -44,22 +79,44 @@ export function searchAll(rawQuery: string, lawId?: string): SearchResults {
   const query = rawQuery.trim().toLowerCase();
   if (!query) return EMPTY;
 
-  const targetArticles = getOrderedArticleIds(lawId);
+  const allArticles = getCachedArticles();
+  const matchedArticles: { item: SearchArticleItem; score: number }[] = [];
 
-  const articleItems: SearchArticleItem[] = [];
-  const articleIds: string[] = [];
+  for (let i = 0; i < allArticles.length; i++) {
+    const art = allArticles[i];
+    if (lawId && art.lawId !== lawId) continue;
 
-  targetArticles.forEach((id) => {
-    const article = getArticle(id, lawId);
-    const matchesId = id.includes(query);
-    const matchesText = article ? article.paragraphs.some((p) => includes(p, query)) : false;
-
-    if (matchesId || matchesText) {
-      const resolvedLawId = getLawIdForArticle(id, lawId);
-      articleIds.push(id);
-      articleItems.push({ id, lawId: resolvedLawId });
+    let score = 0;
+    if (art.idLower === query) {
+      score = 4; // ตรงกับเลขมาตราเป๊ะ
+    } else if (art.idLower.startsWith(query)) {
+      score = 3; // ขึ้นต้นด้วยเลขมาตรา เช่น "15" -> "150"
+    } else if (art.idLower.includes(query)) {
+      score = 2; // เลขมาตรารองรับ query
+    } else if (art.fullTextLower.includes(query)) {
+      score = 1; // พบในเนื้อหาตัวบท
     }
+
+    if (score > 0) {
+      matchedArticles.push({
+        item: { id: art.id, lawId: art.lawId },
+        score,
+      });
+    }
+  }
+
+  // เรียงลำดับ: คะแนนความเกี่ยวข้องสูงกว่ามาก่อน -> ถ้าเท่ากันให้ ป.พ.พ. (default) มาก่อน -> ตามลำดับมาตรา
+  matchedArticles.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (a.item.lawId !== b.item.lawId) {
+      if (a.item.lawId === 'ccc') return -1;
+      if (b.item.lawId === 'ccc') return 1;
+    }
+    return compareArticleIds(a.item.id, b.item.id);
   });
+
+  const articleItems = matchedArticles.map((m) => m.item);
+  const articleIds = articleItems.map((m) => m.id);
 
   const decisions = getAllDecisions().filter(
     (decision) =>
