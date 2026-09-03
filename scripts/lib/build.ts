@@ -35,13 +35,20 @@ export interface BuildResult {
 }
 
 /** ประกอบ token เป็นต้นไม้ + คลังมาตรา */
-export function build(tokens: Token[]): BuildResult {
+export function build(
+  tokens: Token[],
+  customLevelDepth?: Partial<Record<LawLevel, number>>,
+): BuildResult {
   const tree: BuiltNode[] = [];
   const articles = new Map<string, BuiltArticle>();
   const orphanArticleIds: string[] = [];
+  const levelDepth: Record<LawLevel, number> = {
+    ...LEVEL_DEPTH,
+    ...customLevelDepth,
+  };
 
   /** stack[d] = โหนดที่เปิดอยู่ที่ความลึก d */
-  const stack: (BuiltNode | null)[] = [null, null, null, null];
+  const stack: (BuiltNode | null)[] = [null, null, null, null, null];
   let currentArticle: BuiltArticle | null = null;
   const addParagraph = (raw: string) => {
     if (!currentArticle) return;
@@ -53,7 +60,7 @@ export function build(tokens: Token[]): BuildResult {
     switch (token.kind) {
       case 'heading': {
         currentArticle = null;
-        const depth = LEVEL_DEPTH[token.level];
+        const depth = token.title === 'บทเฉพาะกาล' ? 0 : levelDepth[token.level];
         const node: BuiltNode = {
           type: token.level,
           number: token.number,

@@ -13,7 +13,15 @@
     "import:law": "tsx scripts/import.ts",
     "import:law:check": "tsx scripts/import.ts --check",
     "import:cpc": "tsx scripts/import.ts --law=cpc",
-    "import:cpc:check": "tsx scripts/import.ts --law=cpc --check"
+    "import:cpc:check": "tsx scripts/import.ts --law=cpc --check",
+    "import:penal": "tsx scripts/import.ts --law=penal-code",
+    "import:penal:check": "tsx scripts/import.ts --law=penal-code --check",
+    "import:penal-code": "tsx scripts/import.ts --law=penal-code",
+    "import:penal-code:check": "tsx scripts/import.ts --law=penal-code --check",
+    "import:crpc": "tsx scripts/import.ts --law=crpc",
+    "import:crpc:check": "tsx scripts/import.ts --law=crpc --check",
+    "import:state-admin": "tsx scripts/import.ts --law=state-admin",
+    "import:state-admin:check": "tsx scripts/import.ts --law=state-admin --check"
   },
   "dependencies": {
     "react": "^18.3.1",

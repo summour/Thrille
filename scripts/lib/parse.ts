@@ -14,13 +14,13 @@ const HEADING_RE = {
   บรรพ: /^บรรพ\s*([๐-๙\d]+)\s*(.*)$/,
   ภาค: /^ภาค\s*([๐-๙\d]+)\s*(.*)$/,
   ลักษณะ: /^ลักษณะ\s*([๐-๙\d]+)\s*(.*)$/,
-  หมวด: /^หมวด\s*([๐-๙\d]+)\s*(.*)$/,
+  หมวด: /^(?:หมวด\s*([๐-๙\d]+)\s*(.*)|บทเฉพาะกาล(?:\s*(.*))?)$/,
   ส่วน: /^ส่วนที่\s*([๐-๙\d]+)\s*(.*)$/,
 } as const;
 
 const ORDINALS = Object.keys(ORDINAL_WORDS).join('|');
 const ARTICLE_LINE_RE = new RegExp(
-  `^มาตรา\\s*([๐-๙\\d]+(?:\\s*/\\s*[๐-๙\\d]+)?(?:\\s+(?:${ORDINALS}))?)\\s*(.*)`,
+  `^มาตรา\\s*([๐-๙\\d]+(?:\\s+(?:${ORDINALS}))?(?:\\s*/\\s*[๐-๙\\d]+)?)\\s*(.*)`,
 );
 
 const NOTE_RE = /^\[(.*)\]$/;
@@ -44,7 +44,8 @@ export function tokenize(lines: string[]): Token[] {
     // หยุดเมื่อถึงท้ายตัวบท เช่น ตารางท้ายประมวลฯ หรือ บัญชีพระราชบัญญัติแก้ไขเพิ่มเติม
     if (
       /^ตาราง\s*[๐-๙\d]+/.test(line) ||
-      /^(?:พระราชบัญญัติแก้ไขเพิ่มเติม|รัฐธรรมนูญแก้ไขเพิ่มเติม)/.test(line)
+      /^(?:พระราชบัญญัติแก้ไขเพิ่มเติม|รัฐธรรมนูญแก้ไขเพิ่มเติม)/.test(line) ||
+      /^หมายเหตุ\s*:-/.test(line)
     ) {
       break;
     }
@@ -75,15 +76,18 @@ export function tokenize(lines: string[]): Token[] {
       if (level === 'คำปรารภ' || level === 'ข้อความเบื้องต้น') {
         number = '';
         title = (match[1] ?? '').trim() || (level === 'คำปรารภ' ? 'คำปรารภ' : '');
+      } else if (/^บทเฉพาะกาล/.test(line)) {
+        number = '';
+        title = 'บทเฉพาะกาล';
       } else {
         number = toArabicDigits(match[1]);
         title = (match[2] ?? '').trim();
       }
 
-      if (!title && level !== 'ข้อความเบื้องต้น' && level !== 'คำปรารภ') {
+      if (!title && level !== 'ข้อความเบื้องต้น' && level !== 'คำปรารภ' && !/^บทเฉพาะกาล/.test(line)) {
         const next = lines.slice(i + 1).find((candidate) => candidate.length > 0);
-        if (next && !isStructuralLine(next)) {
-          title = next;
+        if (next && (!isStructuralLine(next) || next.trim() === 'ข้อความเบื้องต้น')) {
+          title = next.trim();
           i = lines.indexOf(next, i + 1); // ข้ามบรรทัดชื่อไป
         }
       }

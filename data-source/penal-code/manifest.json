@@ -1,0 +1,16 @@
+{
+  "codeTitle": "ประมวลกฎหมายอาญา",
+  "sources": [
+    {
+      "file": "penal-code.txt",
+      "scope": "ภาค ๑ - ภาค ๓ (มาตรา ๑ - ๓๙๘)",
+      "sourceName": "สำนักงานคณะกรรมการกฤษฎีกา",
+      "sourceUrl": "https://www.krisdika.go.th/",
+      "documentTitle": "ประมวลกฎหมายอาญา",
+      "retrievedAt": "2026-09-03",
+      "retrievedBy": "manual copy-paste"
+    }
+  ],
+  "lastImportedAt": "2026-09-03",
+  "articleCount": 448
+}

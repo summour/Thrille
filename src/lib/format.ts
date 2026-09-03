@@ -52,12 +52,15 @@ function parseSortKey(id: string): [number, number] {
   const [head, slashSub] = id.split('/');
   const [mainText, word] = head.trim().split(/\s+/);
   const main = Number(mainText) || 0;
+  if (word && ORDINAL_WORDS[word] && slashSub) {
+    return [main, ORDINAL_WORDS[word] + (Number(slashSub) || 0) * 0.01];
+  }
   if (slashSub) return [main, Number(slashSub) || 0];
   if (word && ORDINAL_WORDS[word]) return [main, ORDINAL_WORDS[word]];
   return [main, 0];
 }
 
-/** เรียงเลขมาตราแบบธรรมชาติ รองรับรูปแบบ "150", "1598/1", "1375 ทวิ" */
+/** เรียงเลขมาตราแบบธรรมชาติ รองรับรูปแบบ "150", "1598/1", "1375 ทวิ", "172 ทวิ/1" */
 export function compareArticleIds(a: string, b: string): number {
   const [aMain, aSub] = parseSortKey(a);
   const [bMain, bSub] = parseSortKey(b);

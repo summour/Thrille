@@ -15,24 +15,99 @@ import { cleanLines } from './lib/clean';
 import { tokenize } from './lib/parse';
 import { build, type BuiltArticle, type BuiltNode } from './lib/build';
 import { validate } from './lib/validate';
+import { parseArticleNumber } from './lib/thai';
+
+import type { LawLevel } from '../src/types/law';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+interface LawConfig {
+  id: string;
+  name: string;
+  rawDir: string;
+  outDir: string;
+  manifest: string;
+  hasFootnotesAtEnd?: boolean;
+  levelDepth?: Partial<Record<LawLevel, number>>;
+}
+
+const LAW_CONFIGS: Record<string, LawConfig> = {
+  ccc: {
+    id: 'ccc',
+    name: '[ป.พ.พ.] ประมวลกฎหมายแพ่งและพาณิชย์',
+    rawDir: join(ROOT, 'data-source', 'raw'),
+    outDir: join(ROOT, 'src', 'data', 'generated'),
+    manifest: join(ROOT, 'data-source', 'manifest.json'),
+  },
+  cpc: {
+    id: 'cpc',
+    name: '[ป.วิ.พ.] ประมวลกฎหมายวิธีพิจารณาความแพ่ง',
+    rawDir: join(ROOT, 'data-source', 'cpc'),
+    outDir: join(ROOT, 'src', 'data', 'generated-cpc'),
+    manifest: join(ROOT, 'data-source', 'cpc', 'manifest.json'),
+  },
+  'penal-code': {
+    id: 'penal-code',
+    name: '[ป.อ.] ประมวลกฎหมายอาญา',
+    rawDir: join(ROOT, 'data-source', 'penal-code', 'raw'),
+    outDir: join(ROOT, 'src', 'data', 'generated-penal-code'),
+    manifest: join(ROOT, 'data-source', 'penal-code', 'manifest.json'),
+    hasFootnotesAtEnd: true,
+  },
+  penal: {
+    id: 'penal-code',
+    name: '[ป.อ.] ประมวลกฎหมายอาญา',
+    rawDir: join(ROOT, 'data-source', 'penal-code', 'raw'),
+    outDir: join(ROOT, 'src', 'data', 'generated-penal-code'),
+    manifest: join(ROOT, 'data-source', 'penal-code', 'manifest.json'),
+    hasFootnotesAtEnd: true,
+  },
+  crpc: {
+    id: 'crpc',
+    name: '[ป.วิ.อ.] ประมวลกฎหมายวิธีพิจารณาความอาญา',
+    rawDir: join(ROOT, 'data-source', 'crpc', 'raw'),
+    outDir: join(ROOT, 'src', 'data', 'generated-crpc'),
+    manifest: join(ROOT, 'data-source', 'crpc', 'manifest.json'),
+    hasFootnotesAtEnd: true,
+  },
+  'criminal-procedure': {
+    id: 'crpc',
+    name: '[ป.วิ.อ.] ประมวลกฎหมายวิธีพิจารณาความอาญา',
+    rawDir: join(ROOT, 'data-source', 'crpc', 'raw'),
+    outDir: join(ROOT, 'src', 'data', 'generated-crpc'),
+    manifest: join(ROOT, 'data-source', 'crpc', 'manifest.json'),
+    hasFootnotesAtEnd: true,
+  },
+  'state-admin': {
+    id: 'state-admin',
+    name: '[ระเบียบบริหารราชการแผ่นดิน] พระราชบัญญัติระเบียบบริหารราชการแผ่นดิน พ.ศ. ๒๕๓๔',
+    rawDir: join(ROOT, 'data-source', 'state-admin', 'raw'),
+    outDir: join(ROOT, 'src', 'data', 'generated-state-admin'),
+    manifest: join(ROOT, 'data-source', 'state-admin', 'manifest.json'),
+    hasFootnotesAtEnd: true,
+    levelDepth: {
+      ส่วน: 0,
+      หมวด: 1,
+    },
+  },
+};
 
 const args = process.argv.slice(2);
 const checkOnly = args.includes('--check');
 const lawArg = args.find((a) => a.startsWith('--law='))?.split('=')[1] ?? 'ccc';
-const isCpc = lawArg === 'cpc';
 
-const RAW_DIR = join(ROOT, 'data-source', isCpc ? 'cpc' : 'raw');
-const OUT_DIR = join(ROOT, 'src', 'data', isCpc ? 'generated-cpc' : 'generated');
-const MANIFEST = join(ROOT, 'data-source', isCpc ? 'cpc/manifest.json' : 'manifest.json');
+const config = LAW_CONFIGS[lawArg];
+if (!config) {
+  console.error(`✗ ไม่รู้จักกฎหมาย: ${lawArg} (เลือกได้: ${Object.keys(LAW_CONFIGS).join(', ')})`);
+  process.exit(1);
+}
+
+const RAW_DIR = config.rawDir;
+const OUT_DIR = config.outDir;
+const MANIFEST = config.manifest;
 
 function main() {
-  console.log(
-    isCpc
-      ? '▸ [ป.วิ.พ.] นำเข้าประมวลกฎหมายวิธีพิจารณาความแพ่ง'
-      : '▸ [ป.พ.พ.] นำเข้าประมวลกฎหมายแพ่งและพาณิชย์',
-  );
+  console.log(`▸ ${config.name}`);
 
   if (!existsSync(RAW_DIR)) {
     console.error(`✗ ไม่พบโฟลเดอร์ ${RAW_DIR}`);
@@ -50,11 +125,30 @@ function main() {
 
   console.log(`▸ อ่านไฟล์ ${files.length} ไฟล์: ${files.join(', ')}`);
 
+  const rawContents = files.map((name) => readFileSync(join(RAW_DIR, name), 'utf8'));
+  const combinedRaw = rawContents.join('\n');
+
+  // ถ้ากฎหมายมีเชิงอรรถรวมอยู่ที่ท้ายไฟล์ (เช่น ประมวลกฎหมายอาญา) ให้สกัดเชิงอรรถมาใส่ในแต่ละมาตรา
+  let articleNotes: Map<string, string[]> | null = null;
+  if (config.hasFootnotesAtEnd) {
+    articleNotes = extractFootnotes(combinedRaw);
+  }
+
   // ต่อทุกไฟล์เข้าด้วยกันตามลำดับชื่อไฟล์ (book1.txt, book2.txt, …)
-  const lines = files.flatMap((name) => cleanLines(readFileSync(join(RAW_DIR, name), 'utf8')));
+  const lines = rawContents.flatMap((content) => cleanLines(content));
 
   const tokens = tokenize(lines);
-  const result = build(tokens);
+  const result = build(tokens, config.levelDepth);
+
+  if (articleNotes) {
+    for (const [id, notes] of articleNotes.entries()) {
+      const art = result.articles.get(id);
+      if (art && notes.length > 0) {
+        art.note = notes.join('\n');
+      }
+    }
+  }
+
   const report = validate(result);
 
   printReport(report);
@@ -77,6 +171,62 @@ function main() {
 
   console.log(`\n✓ เขียนไฟล์แล้วที่ ${OUT_DIR}`);
   console.log('  ขั้นถัดไป: npm run typecheck && npm run dev');
+}
+
+/** สกัดเชิงอรรถท้ายเอกสารและเชื่อมโยงเข้ากับเลขมาตราที่มีการอ้างอิงเชิงอรรถในเนื้อหา */
+function extractFootnotes(fullText: string): Map<string, string[]> {
+  const footnoteMap = new Map<string, string>();
+  for (const line of fullText.split('\n')) {
+    const m = line.trim().match(/^\[([๐-๙\d]+)\]\s*(.*)$/);
+    if (m) {
+      footnoteMap.set(m[1], m[2]);
+    }
+  }
+
+  const rawLines = fullText.split('\n');
+  let currentArtId = '';
+  const articleNotes = new Map<string, string[]>();
+
+  for (let i = 0; i < rawLines.length; i++) {
+    const line = rawLines[i];
+    if (line.trim().startsWith('หมายเหตุ :-') || line.trim().startsWith('พระราชบัญญัติแก้ไขเพิ่มเติม')) {
+      break;
+    }
+    const artMatch = line.match(
+      /^มาตรา\s*([๐-๙\d]+(?:\s*\/\s*[๐-๙\d]+)?(?:\s+(?:ทวิ|ตรี|จัตวา|เบญจ|ฉ|สัปต|อัฐ|นพ|ทศ))?)/,
+    );
+    if (artMatch) {
+      const rawId = artMatch[1].replace(/\s+/g, ' ').trim();
+      const p = parseArticleNumber(rawId);
+      if (p) currentArtId = p.id;
+    }
+    if (currentArtId) {
+      const fnRefs = line.matchAll(/\[([๐-๙\d]+)\]/g);
+      for (const ref of fnRefs) {
+        const fnNum = ref[1];
+        const fnText = footnoteMap.get(fnNum);
+        if (fnText) {
+          // ข้ามเชิงอรรถที่เป็นหัวข้อโครงสร้าง เช่น ภาค, ลักษณะ, หมวด, ส่วน
+          if (
+            fnText.startsWith('ภาค ') ||
+            fnText.startsWith('ลักษณะ ') ||
+            fnText.startsWith('หมวด ') ||
+            fnText.startsWith('ส่วน ')
+          ) {
+            continue;
+          }
+          if (!articleNotes.has(currentArtId)) {
+            articleNotes.set(currentArtId, []);
+          }
+          if (!articleNotes.get(currentArtId)!.includes(fnText)) {
+            articleNotes.get(currentArtId)!.push(fnText);
+          }
+        }
+      }
+    }
+  }
+
+  return articleNotes;
 }
 
 function toPlainNode(node: BuiltNode): Record<string, unknown> {

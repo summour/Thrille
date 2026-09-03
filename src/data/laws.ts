@@ -6,14 +6,16 @@ import { constitutionArticles } from '@/data/constitutionArticles';
 import { constitutionTree } from '@/data/constitutionTree';
 import { cpcArticles } from '@/data/cpcArticles';
 import { cpcTree } from '@/data/cpcTree';
+import { crpcArticles } from '@/data/crpcArticles';
+import { crpcTree } from '@/data/crpcTree';
 import { nhrcArticles } from '@/data/nhrcArticles';
 import { nhrcTree } from '@/data/nhrcTree';
 import { officialInfoArticles } from '@/data/officialInfoArticles';
 import { officialInfoTree } from '@/data/officialInfoTree';
-import { penalActArticles } from '@/data/penalActArticles';
-import { penalActTree } from '@/data/penalActTree';
 import { penalCodeArticles } from '@/data/penalCodeArticles';
 import { penalCodeTree } from '@/data/penalCodeTree';
+import { stateAdminArticles } from '@/data/stateAdminArticles';
+import { stateAdminTree } from '@/data/stateAdminTree';
 import { tortLiabilityArticles } from '@/data/tortLiabilityArticles';
 import { tortLiabilityTree } from '@/data/tortLiabilityTree';
 import type { Article, LawCodeMeta, LawNode } from '@/types/law';
@@ -50,6 +52,20 @@ const cpcMeta: LawCodeMeta = {
   unitName: 'ภาค',
   totalSections: 4,
   totalArticles: Object.keys(cpcArticles).length,
+};
+
+/* -------------------------------------------------------------------------- */
+/*             2.1 ประมวลกฎหมายวิธีพิจารณาความอาญา (ป.วิ.อ.)                 */
+/* -------------------------------------------------------------------------- */
+const crpcMeta: LawCodeMeta = {
+  id: 'crpc',
+  code: 'ป.วิ.อ.',
+  title: 'ประมวลกฎหมายวิธีพิจารณาความอาญา',
+  shortTitle: 'ป.วิ.อ.',
+  description: 'กฎหมายว่าด้วยวิธีพิจารณาคดีอาญา ข้อความเบื้องต้น การสอบสวน วิธีพิจารณาในศาลชั้นต้น อุทธรณ์ ฎีกา พยานหลักฐาน การบังคับตามคำพิพากษา และอภัยโทษ',
+  unitName: 'ภาค',
+  totalSections: 7,
+  totalArticles: Object.keys(crpcArticles).length,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -137,17 +153,17 @@ const penalCodeMeta: LawCodeMeta = {
 };
 
 /* -------------------------------------------------------------------------- */
-/*       9. พระราชบัญญัติให้ใช้ประมวลกฎหมายอาญา (พ.ร.บ.ให้ใช้ ป.อ.)            */
+/*       9. พระราชบัญญัติระเบียบบริหารราชการแผ่นดิน (บริหารราชการแผ่นดิน)     */
 /* -------------------------------------------------------------------------- */
-const penalActMeta: LawCodeMeta = {
-  id: 'penal-act',
-  code: 'พ.ร.บ.ให้ใช้ ป.อ.',
-  title: 'พระราชบัญญัติให้ใช้ประมวลกฎหมายอาญา พ.ศ. ๒๔๙๙',
-  shortTitle: 'พ.ร.บ.ให้ใช้ประมวลกฎหมายอาญา',
-  description: 'พระราชบัญญัติให้ใช้ประมวลกฎหมายอาญา พ.ศ. ๒๔๙๙ กำหนดวันใช้บังคับ การยกเลิกกฎหมายลักษณะอาญา และบทเฉพาะกาล',
-  unitName: 'มาตรา',
-  totalSections: 1,
-  totalArticles: Object.keys(penalActArticles).length,
+const stateAdminMeta: LawCodeMeta = {
+  id: 'state-admin',
+  code: 'บริหารราชการแผ่นดิน',
+  title: 'พระราชบัญญัติระเบียบบริหารราชการแผ่นดิน พ.ศ. ๒๕๓๔',
+  shortTitle: 'พ.ร.บ.ระเบียบบริหารราชการแผ่นดิน',
+  description: 'กฎหมายว่าด้วยการจัดระเบียบบริหารราชการส่วนกลาง ส่วนภูมิภาค และส่วนท้องถิ่น การปฏิบัติราชการแทน และการรักษาราชการแทน',
+  unitName: 'ส่วน',
+  totalSections: 4,
+  totalArticles: Object.keys(stateAdminArticles).length,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -174,10 +190,10 @@ export const lawPackages: Record<string, LawPackage> = {
     tree: cpcTree,
     articles: cpcArticles,
   },
-  'penal-act': {
-    meta: penalActMeta,
-    tree: penalActTree,
-    articles: penalActArticles,
+  crpc: {
+    meta: crpcMeta,
+    tree: crpcTree,
+    articles: crpcArticles,
   },
   'admin-proc': {
     meta: adminProcMeta,
@@ -199,6 +215,11 @@ export const lawPackages: Record<string, LawPackage> = {
     tree: tortLiabilityTree,
     articles: tortLiabilityArticles,
   },
+  'state-admin': {
+    meta: stateAdminMeta,
+    tree: stateAdminTree,
+    articles: stateAdminArticles,
+  },
 };
 
 export const defaultLawId = 'ccc';
@@ -208,9 +229,10 @@ export const allLawMetas: LawCodeMeta[] = [
   cccMeta,
   penalCodeMeta,
   cpcMeta,
-  penalActMeta,
+  crpcMeta,
   adminProcMeta,
   officialInfoMeta,
   nhrcMeta,
   tortLiabilityMeta,
+  stateAdminMeta,
 ];

@@ -31,15 +31,15 @@ export const ORDINAL_WORDS: Record<string, number> = {
 
 const ORDINAL_PATTERN = Object.keys(ORDINAL_WORDS).join('|');
 
-/** regex สำหรับจับเลขมาตราทุกรูปแบบที่พบใน ป.พ.พ. */
+/** regex สำหรับจับเลขมาตราทุกรูปแบบที่พบใน ป.พ.พ., ป.อ., ป.วิ.พ., ป.วิ.อ. */
 export const ARTICLE_NUMBER_RE = new RegExp(
   `([๐-๙\\d]+)` + // เลขหลัก
-    `(?:\\s*/\\s*([๐-๙\\d]+))?` + // แบบ 1598/1
-    `(?:\\s+(${ORDINAL_PATTERN}))?`, // แบบ 1375 ทวิ
+    `(?:\\s+(${ORDINAL_PATTERN}))?` + // แบบ 1375 ทวิ
+    `(?:\\s*/\\s*([๐-๙\\d]+))?`, // แบบ 1598/1 หรือ 172 ทวิ/1
 );
 
 export interface ParsedArticleNumber {
-  /** id ที่ใช้เป็น key เช่น "150", "1598/1", "1375 ทวิ" */
+  /** id ที่ใช้เป็น key เช่น "150", "1598/1", "1375 ทวิ", "172 ทวิ/1" */
   id: string;
   /** ใช้เรียงลำดับ: [เลขหลัก, ลำดับย่อย] */
   sortKey: [number, number];
@@ -50,9 +50,16 @@ export function parseArticleNumber(raw: string): ParsedArticleNumber | null {
   if (!match) return null;
 
   const main = toArabicDigits(match[1]);
-  const slashSub = match[2] ? toArabicDigits(match[2]) : null;
-  const word = match[3];
+  const word = match[2];
+  const slashSub = match[3] ? toArabicDigits(match[3]) : null;
 
+  if (word && slashSub) {
+    const normalizedWord = word === 'อัฎฐ' ? 'อัฏฐ' : word;
+    return {
+      id: `${main} ${normalizedWord}/${slashSub}`,
+      sortKey: [Number(main), (ORDINAL_WORDS[word] ?? 1) + Number(slashSub) * 0.01],
+    };
+  }
   if (slashSub) {
     return { id: `${main}/${slashSub}`, sortKey: [Number(main), Number(slashSub)] };
   }
@@ -63,11 +70,14 @@ export function parseArticleNumber(raw: string): ParsedArticleNumber | null {
   return { id: main, sortKey: [Number(main), 1] };
 }
 
-/** แยกเลขมาตราเป็นคีย์เรียงลำดับ รองรับ "150", "1598/1", "1375 ทวิ" */
+/** แยกเลขมาตราเป็นคีย์เรียงลำดับ รองรับ "150", "1598/1", "1375 ทวิ", "172 ทวิ/1" */
 function sortKey(id: string): [number, number] {
   const [head, slashSub] = id.split('/');
   const [mainText, word] = head.trim().split(/\s+/);
   const main = Number(mainText);
+  if (word && ORDINAL_WORDS[word] && slashSub) {
+    return [main, ORDINAL_WORDS[word] + Number(slashSub) * 0.01];
+  }
   if (slashSub) return [main, Number(slashSub)];
   if (word && ORDINAL_WORDS[word]) return [main, ORDINAL_WORDS[word]];
   return [main, 1];
