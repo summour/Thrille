@@ -1,245 +1,224 @@
 import fs from 'fs';
+import path from 'path';
 import sharp from 'sharp';
 
-// High-fidelity SVG based on the uploaded icon-trille0.png
-const svg512 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+// 200x200 coordinate space scaled cleanly to 512x512
+// Proportions strictly matching icon-trille0.png:
+// - Red square background
+// - Text "Thri" on left, vertically centered in upper-mid
+// - Yellow creature head with 2 tall ears acting as "ll"
+// - Lowercase "e" to the right of the creature's ear
+// - Creature's head hangs down below the text baseline into bottom-right
+const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="512" height="512">
   <defs>
     <style>
-      .bg { fill: #DB1F18; }
-      .letter-body { fill: #FFEA00; }
-      .letter-outline { stroke: #000000; stroke-width: 8; stroke-linejoin: round; stroke-linecap: round; }
-      .letter-inline { stroke: #000000; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; fill: none; }
-      .creature-body { fill: #FFEA00; stroke: #000000; stroke-width: 7; stroke-linejoin: round; stroke-linecap: round; }
-      .creature-feature { fill: #000000; }
+      .bg { fill: #DC1E19; }
+      .yellow-body { fill: #FFEA00; }
+      .black-stroke { stroke: #000000; stroke-width: 2.8; stroke-linejoin: round; stroke-linecap: round; }
+      .inline-stroke { stroke: #000000; stroke-width: 0.9; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+      .creature-stroke { stroke: #000000; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+      .solid-black { fill: #000000; }
     </style>
   </defs>
 
-  <!-- Background: Saturated Vibrant Red -->
-  <rect width="512" height="512" class="bg" />
+  <!-- Background: Red -->
+  <rect width="200" height="200" class="bg" />
 
-  <g id="thrille-logo">
-    <!-- ==================== Letter T ==================== -->
-    <g id="letter-T">
-      <path class="letter-outline letter-body" d="
-        M 46 182 
-        L 118 182 
-        C 122 182, 124 185, 123 192 
-        L 119 204 
-        C 118 208, 115 209, 110 209 
-        L 96 209 
-        L 96 247 
-        C 96 252, 98 254, 104 254 
-        L 108 254 
-        L 108 265 
-        L 56 265 
-        L 56 254 
-        L 60 254 
-        C 66 254, 68 252, 68 247 
-        L 68 209 
-        L 55 209 
-        C 50 209, 47 208, 46 204 
-        L 42 192 
-        C 41 185, 43 182, 46 182 Z
+  <g id="logo">
+    <!-- ================= LETTER T ================= -->
+    <g id="T">
+      <path class="yellow-body black-stroke" d="
+        M 18 72 
+        L 46 72 
+        L 45 78 
+        L 36 78 
+        L 36 96 
+        L 40 96 
+        L 40 100 
+        L 24 100 
+        L 24 96 
+        L 28 96 
+        L 28 78 
+        L 19 78 
+        Z
       " />
-      <path class="letter-inline" d="
-        M 52 188 L 112 188 L 110 201 L 89 201 L 89 250 L 98 250 L 98 258 L 66 258 L 66 250 L 75 250 L 75 201 L 54 201 Z
+      <path class="inline-stroke" d="
+        M 20 74 L 44 74 L 43 76 L 34 76 L 34 97 L 38 97 L 38 99 L 26 99 L 26 97 L 30 97 L 30 76 L 21 76 Z
       " />
     </g>
 
-    <!-- ==================== Letter h ==================== -->
-    <g id="letter-h">
-      <path class="letter-outline letter-body" d="
-        M 124 184 
-        L 144 184 
-        C 147 184, 149 186, 149 191 
-        L 149 211 
-        C 155 203, 164 199, 175 199 
-        C 188 199, 195 207, 195 221 
-        L 195 247 
-        C 195 252, 197 254, 202 254 
-        L 205 254 
-        L 205 265 
-        L 173 265 
-        L 173 254 
-        L 177 254 
-        C 181 254, 183 252, 183 247 
-        L 183 225 
-        C 183 216, 178 212, 170 212 
-        C 161 212, 153 218, 149 226 
-        L 149 247 
-        C 149 252, 151 254, 156 254 
-        L 159 254 
-        L 159 265 
-        L 124 265 
-        L 124 254 
-        L 128 254 
-        C 133 254, 135 252, 135 247 
-        L 135 195 
-        C 135 188, 132 186, 126 186 Z
+    <!-- ================= LETTER h ================= -->
+    <g id="h">
+      <path class="yellow-body black-stroke" d="
+        M 48 72 
+        L 55 72 
+        L 55 81 
+        C 57 78, 61 77, 66 77 
+        C 71 77, 74 80, 74 85 
+        L 74 96 
+        L 77 96 
+        L 77 100 
+        L 66 100 
+        L 66 96 
+        L 68 96 
+        L 68 86 
+        C 68 83, 66 81, 63 81 
+        C 59 81, 56 83, 55 87 
+        L 55 96 
+        L 58 96 
+        L 58 100 
+        L 46 100 
+        L 46 96 
+        L 48 96 
+        Z
       " />
-      <path class="letter-inline" d="
-        M 137 193 L 143 193 L 143 221 C 149 213, 158 208, 169 208 C 180 208, 186 214, 186 225 L 186 256 L 178 256 L 178 226 C 178 217, 172 215, 166 215 C 158 215, 150 221, 145 230 L 145 256 L 137 256 Z
+      <path class="inline-stroke" d="
+        M 50 74 L 53 74 L 53 84 C 55 80, 59 79, 64 79 C 69 79, 72 82, 72 86 L 72 98 L 68 98 L 68 87 C 68 82, 65 80, 62 80 C 58 80, 55 83, 54 88 L 54 98 L 48 98 L 48 96 L 50 96 Z
       " />
     </g>
 
-    <!-- ==================== Letter r ==================== -->
-    <g id="letter-r">
-      <path class="letter-outline letter-body" d="
-        M 203 206 
-        L 222 206 
-        C 225 206, 226 208, 226 212 
-        L 226 219 
-        C 231 208, 239 202, 251 202 
-        C 255 202, 259 203, 263 206 
-        L 257 223 
-        C 253 220, 248 219, 244 219 
-        C 235 219, 227 225, 226 235 
-        L 226 247 
-        C 226 252, 228 254, 233 254 
-        L 236 254 
-        L 236 265 
-        L 203 265 
-        L 203 254 
-        L 207 254 
-        C 212 254, 214 252, 214 247 
-        L 214 217 
-        C 214 210, 211 208, 205 208 Z
+    <!-- ================= LETTER r ================= -->
+    <g id="r">
+      <path class="yellow-body black-stroke" d="
+        M 78 80 
+        L 85 80 
+        L 85 84 
+        C 87 81, 90 79, 95 79 
+        C 97 79, 99 80, 100 81 
+        L 98 86 
+        C 96 85, 94 85, 92 85 
+        C 88 85, 86 87, 85 91 
+        L 85 96 
+        L 88 96 
+        L 88 100 
+        L 76 100 
+        L 76 96 
+        L 78 96 
+        Z
       " />
-      <path class="letter-inline" d="
-        M 217 213 L 221 213 L 222 225 C 228 215, 236 209, 245 209 C 248 209, 252 210, 255 212 L 252 219 C 247 216, 242 215, 238 215 C 229 215, 222 223, 221 234 L 221 257 L 217 257 Z
+      <path class="inline-stroke" d="
+        M 80 82 L 83 82 L 83 87 C 85 83, 89 81, 93 81 C 95 81, 97 82, 98 83 L 96 86 C 94 85, 92 85, 90 85 C 86 85, 84 88, 83 92 L 83 98 L 78 98 L 78 96 L 80 96 Z
       " />
     </g>
 
-    <!-- ==================== Letter i ==================== -->
-    <g id="letter-i">
+    <!-- ================= LETTER i ================= -->
+    <g id="i">
       <!-- Dot -->
-      <path class="letter-outline letter-body" d="
-        M 251 185 
-        L 269 185 
-        C 272 185, 273 187, 273 191 
-        L 273 198 
-        C 273 202, 271 203, 267 203 
-        L 252 203 
-        C 248 203, 246 201, 246 197 
-        L 246 190 
-        C 246 186, 248 185, 251 185 Z
+      <path class="yellow-body black-stroke" d="
+        M 97 72 L 103 72 L 103 77 L 97 77 Z
       " />
-      <path class="letter-inline" d="
-        M 252 190 L 267 190 L 267 198 L 252 198 Z
+      <path class="inline-stroke" d="
+        M 98 73 L 102 73 L 102 76 L 98 76 Z
       " />
       <!-- Stem -->
-      <path class="letter-outline letter-body" d="
-        M 247 208 
-        L 266 208 
-        C 269 208, 271 210, 271 214 
-        L 271 247 
-        C 271 252, 273 254, 278 254 
-        L 281 254 
-        L 281 265 
-        L 247 265 
-        L 247 254 
-        L 251 254 
-        C 256 254, 258 252, 258 247 
-        L 258 217 
-        C 258 211, 255 210, 249 210 Z
+      <path class="yellow-body black-stroke" d="
+        M 96 80 
+        L 104 80 
+        L 104 96 
+        L 107 96 
+        L 107 100 
+        L 94 100 
+        L 94 96 
+        L 96 96 
+        Z
       " />
-      <path class="letter-inline" d="
-        M 256 214 L 263 214 L 263 256 L 256 256 Z
+      <path class="inline-stroke" d="
+        M 98 82 L 102 82 L 102 98 L 96 98 L 96 96 L 98 96 Z
       " />
     </g>
 
-    <!-- ==================== Creature Head ("ll") ==================== -->
-    <g id="creature-ll">
-      <!-- Full Creature Outline (Ears + Head + Chin + Snout) -->
-      <path class="creature-body" d="
-        M 288 262
-        C 287 248, 284 238, 288 226
-        C 285 215, 285 204, 288 195
-        C 292 184, 299 175, 312 176
-        C 324 177, 331 187, 336 200
-        C 341 190, 347 178, 359 176
-        C 371 174, 381 184, 385 197
-        C 388 207, 386 218, 391 228
-        C 394 236, 393 246, 396 256
-        C 400 266, 408 274, 420 286
-        C 434 299, 448 314, 447 334
-        C 445 352, 434 371, 417 388
-        C 402 402, 384 414, 362 414
-        C 342 414, 324 402, 311 386
-        C 300 371, 294 350, 292 330
-        C 290 308, 291 285, 288 262 Z
+    <!-- ================= CREATURE HEAD ("ll") ================= -->
+    <g id="creature">
+      <!-- Outer head contour -->
+      <path class="yellow-body creature-stroke" d="
+        M 116 114
+        C 114 108, 112 102, 114 96
+        C 112 90, 112 84, 114 78
+        C 115 72, 120 68, 126 68
+        C 131 68, 134 72, 135 77
+        C 136 82, 136 88, 138 92
+        C 140 85, 142 78, 145 73
+        C 148 68, 153 68, 158 71
+        C 162 74, 163 80, 161 87
+        C 163 93, 162 100, 164 106
+        C 167 110, 171 114, 175 119
+        C 180 125, 185 130, 184 138
+        C 183 145, 178 152, 172 157
+        C 165 162, 157 165, 148 165
+        C 139 165, 131 161, 125 154
+        C 120 148, 117 139, 116 131
+        C 115 125, 117 119, 116 114 Z
       " />
 
-      <!-- Ear dividing crease line -->
-      <path d="M 336 200 C 342 218, 348 238, 350 256" fill="none" stroke="#000000" stroke-width="4.5" stroke-linecap="round" />
+      <!-- Ear division inner crease -->
+      <path d="M 136 78 C 137 86, 139 96, 141 106" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" />
+      <path d="M 126 76 C 125 82, 123 90, 121 98" fill="none" stroke="#000000" stroke-width="1.6" stroke-linecap="round" />
 
-      <!-- Left ear inner fold contour -->
-      <path d="M 322 192 C 319 204, 315 218, 312 230" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round" />
+      <!-- Eye: solid black vertical oval -->
+      <ellipse class="solid-black" cx="149" cy="122" rx="3.2" ry="5.6" />
 
-      <!-- Eye: Solid vertical oval -->
-      <ellipse class="creature-feature" cx="376" cy="315" rx="7" ry="11" />
-
-      <!-- Nose: Solid round dark button at tip of snout -->
-      <circle class="creature-feature" cx="445" cy="336" r="17.5" />
+      <!-- Nose: solid black round snout circle -->
+      <circle class="solid-black" cx="177" cy="133" r="7.2" />
     </g>
 
-    <!-- ==================== Letter e ==================== -->
-    <g id="letter-e">
-      <path class="letter-outline letter-body" d="
-        M 458 227 
-        C 458 213, 448 201, 431 201 
-        C 415 201, 404 212, 404 230 
-        C 404 248, 416 260, 434 260 
-        C 446 260, 454 254, 459 247 
-        L 446 237 
-        C 443 242, 438 245, 433 245 
-        C 425 245, 419 239, 419 230 
-        L 458 230 Z
-        M 419 220 
-        C 420 214, 425 210, 431 210 
-        C 437 210, 442 214, 443 220 
-        L 419 220 Z
+    <!-- ================= LETTER e ================= -->
+    <g id="e">
+      <path class="yellow-body black-stroke" d="
+        M 183 88 
+        C 183 82, 179 78, 172 78 
+        C 165 78, 160 83, 160 90 
+        C 160 97, 165 101, 172 101 
+        C 178 101, 181 98, 183 95 
+        L 178 92 
+        C 176 94, 174 96, 172 96 
+        C 168 96, 165 93, 165 89 
+        L 183 89 Z
+        M 165 85 
+        C 166 82, 169 81, 172 81 
+        C 175 81, 177 82, 178 85 
+        L 165 85 Z
       " />
-      <path class="letter-inline" d="
-        M 431 206 C 420 206, 410 215, 410 230 C 410 244, 419 254, 433 254 C 443 254, 450 249, 454 242 L 447 237 C 443 241, 439 243, 433 243 C 423 243, 416 236, 416 227 L 452 227 C 452 215, 444 206, 431 206 Z
-        M 417 221 C 419 214, 424 211, 431 211 C 437 211, 442 214, 444 221 Z
+      <path class="inline-stroke" d="
+        M 172 79 C 167 79, 162 83, 162 89 C 162 95, 166 99, 172 99 C 176 99, 179 97, 181 94 L 178 92 C 176 94, 174 95, 172 95 C 167 95, 164 92, 164 88 L 181 88 C 181 83, 177 79, 172 79 Z
+        M 164 85 C 165 82, 168 81, 172 81 C 175 81, 177 82, 178 85 Z
       " />
     </g>
   </g>
 </svg>`;
 
-async function build() {
-  fs.writeFileSync('public/icon-thrille.svg', svg512);
-  fs.writeFileSync('public/favicon.svg', svg512);
+async function run() {
+  const publicDir = path.resolve('public');
 
-  // Generate PNG sizes for PWA
-  await sharp(Buffer.from(svg512))
-    .resize(192, 192)
-    .png()
-    .toFile('public/pwa-192x192.png');
+  // Check if user uploaded a file to public
+  const files = fs.readdirSync(publicDir);
+  const uploadedPng = files.find(f => 
+    f.toLowerCase().includes('trille') && 
+    f.endsWith('.png') && 
+    !f.startsWith('pwa-') && 
+    !f.startsWith('apple-')
+  );
 
-  await sharp(Buffer.from(svg512))
-    .resize(512, 512)
-    .png()
-    .toFile('public/pwa-512x512.png');
+  if (uploadedPng) {
+    const srcPath = path.join(publicDir, uploadedPng);
+    console.log(`Using uploaded file: ${srcPath}`);
+    await sharp(srcPath).resize(192, 192).png().toFile(path.join(publicDir, 'pwa-192x192.png'));
+    await sharp(srcPath).resize(512, 512).png().toFile(path.join(publicDir, 'pwa-512x512.png'));
+    await sharp(srcPath).resize(512, 512).png().toFile(path.join(publicDir, 'pwa-maskable-512x512.png'));
+    await sharp(srcPath).resize(180, 180).png().toFile(path.join(publicDir, 'apple-touch-icon.png'));
+    console.log('Processed uploaded PNG successfully!');
+    return;
+  }
 
-  await sharp(Buffer.from(svg512))
-    .resize(512, 512)
-    .png()
-    .toFile('public/pwa-maskable-512x512.png');
+  // Render SVG to icons
+  fs.writeFileSync(path.join(publicDir, 'icon-thrille.svg'), svgString);
+  fs.writeFileSync(path.join(publicDir, 'favicon.svg'), svgString);
 
-  await sharp(Buffer.from(svg512))
-    .resize(180, 180)
-    .png()
-    .toFile('public/apple-touch-icon.png');
+  await sharp(Buffer.from(svgString)).resize(192, 192).png().toFile(path.join(publicDir, 'pwa-192x192.png'));
+  await sharp(Buffer.from(svgString)).resize(512, 512).png().toFile(path.join(publicDir, 'pwa-512x512.png'));
+  await sharp(Buffer.from(svgString)).resize(512, 512).png().toFile(path.join(publicDir, 'pwa-maskable-512x512.png'));
+  await sharp(Buffer.from(svgString)).resize(180, 180).png().toFile(path.join(publicDir, 'apple-touch-icon.png'));
 
-  // Also save as icon-trille0.png in public so it can be referenced directly by filename
-  await sharp(Buffer.from(svg512))
-    .resize(512, 512)
-    .png()
-    .toFile('public/icon-trille0.png');
-
-  console.log('All PWA icons rebuilt successfully!');
+  console.log('Rendered icons matching exact icon-trille0 composition!');
 }
 
-build().catch(console.error);
+run().catch(console.error);
