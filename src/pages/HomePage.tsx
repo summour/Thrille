@@ -29,11 +29,6 @@ export function HomePage() {
       </header>
 
       <main className="page">
-        <Link to={routes.search()} className="search-entry">
-          <Icon name="search" size={19} />
-          <span>ค้นหามาตรา / คำสำคัญ / เลขฎีกา</span>
-        </Link>
-
         <p className="eyebrow">ประมวลกฎหมาย</p>
 
         <div className="law-box-list" role="list">
