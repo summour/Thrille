@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { NavRow } from '@/components/NavRow';
 import { PageHeader } from '@/layouts/PageHeader';
 import { nodeLabel } from '@/lib/format';
-import { defaultLawId, getAllLaws, getLawMeta, getRootNodes, setLastActiveLawId } from '@/lib/lawIndex';
+import { defaultLawId, getAllLaws, getChildNodes, getLawMeta, getRootNodes, setLastActiveLawId } from '@/lib/lawIndex';
 import { routes } from '@/navigation/routes';
 
 export function TocPage() {
@@ -36,20 +36,23 @@ export function TocPage() {
 
         <p className="eyebrow">เลือก{currentLaw.unitName}</p>
         <div className="list">
-          {roots.map((node) => (
-            <NavRow
-              key={node.id}
-              to={routes.node(node.id, currentLawId)}
-              title={nodeLabel(node)}
-              subtitle={
-                node.type === 'คำปรารภ'
-                  ? 'บทนำและคำปรารภ'
-                  : node.childIds.length > 0
-                  ? `${node.totalArticles} มาตรา · ${node.childIds.length} ลักษณะ`
-                  : `${node.totalArticles} มาตรา`
-              }
-            />
-          ))}
+          {roots.map((node) => {
+            const childType = node.childIds.length > 0 ? getChildNodes(node.id)[0]?.type || 'ส่วน' : '';
+            return (
+              <NavRow
+                key={node.id}
+                to={routes.node(node.id, currentLawId)}
+                title={nodeLabel(node)}
+                subtitle={
+                  node.type === 'คำปรารภ'
+                    ? 'บทนำและคำปรารภ'
+                    : node.childIds.length > 0
+                    ? `${node.totalArticles} มาตรา · ${node.childIds.length} ${childType}`
+                    : `${node.totalArticles} มาตรา`
+                }
+              />
+            );
+          })}
         </div>
       </main>
     </>

@@ -843,6 +843,22 @@
   font-weight: 600;
 }
 
+.search-filters {
+  border-bottom: 0.5px solid var(--line);
+}
+.search-filters .chips {
+  border-bottom: none;
+  padding: 5px var(--space-page);
+}
+.search-filters .chips:first-child {
+  padding-top: 8px;
+  padding-bottom: 3px;
+}
+.search-filters .chips:last-child {
+  padding-top: 3px;
+  padding-bottom: 8px;
+}
+
 /* ----------------------------------- Toast --------------------------------- */
 .toast {
   position: fixed;

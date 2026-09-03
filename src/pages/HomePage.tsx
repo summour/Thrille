@@ -29,7 +29,7 @@ export function HomePage() {
       </header>
 
       <main className="page">
-        <p className="eyebrow">ประมวลกฎหมาย</p>
+        <p className="eyebrow">ประมวลกฎหมายและพระราชบัญญัติ</p>
 
         <div className="law-box-list" role="list">
           {laws.map((law) => (

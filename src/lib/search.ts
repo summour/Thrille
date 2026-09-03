@@ -107,26 +107,31 @@ export function searchAll(rawQuery: string, lawId?: string): SearchResults {
     }
   }
 
-  // เรียงลำดับ: คะแนนความเกี่ยวข้องสูงกว่ามาก่อน -> ถ้าเท่ากันให้ ป.พ.พ. (default) มาก่อน -> ตามลำดับมาตรา
+  const laws = getAllLaws();
+  const lawOrderMap = new Map(laws.map((l, index) => [l.id, index]));
+
+  // เรียงลำดับ: คะแนนความเกี่ยวข้องสูงกว่ามาก่อน -> ลำดับเลขมาตรา -> ลำดับฉบับกฎหมาย
   matchedArticles.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
-    if (a.item.lawId !== b.item.lawId) {
-      if (a.item.lawId === 'ccc') return -1;
-      if (b.item.lawId === 'ccc') return 1;
-    }
-    return compareArticleIds(a.item.id, b.item.id);
+    const cmp = compareArticleIds(a.item.id, b.item.id);
+    if (cmp !== 0) return cmp;
+    const orderA = lawOrderMap.get(a.item.lawId) ?? 999;
+    const orderB = lawOrderMap.get(b.item.lawId) ?? 999;
+    return orderA - orderB;
   });
 
   const articleItems = matchedArticles.map((m) => m.item);
   const articleIds = articleItems.map((m) => m.id);
 
-  const decisions = getAllDecisions().filter(
-    (decision) =>
+  const decisions = getAllDecisions().filter((decision) => {
+    if (lawId && lawId !== 'ccc') return false;
+    return (
       includes(decision.number, query) ||
       includes(decision.year, query) ||
       decision.keywords.some((keyword) => includes(keyword, query)) ||
-      includes(decision.summary, query),
-  );
+      includes(decision.summary, query)
+    );
+  });
 
   const nodes = getAllNodes(lawId).filter(
     (node) => includes(node.title, query) || includes(nodeLabel(node), query),

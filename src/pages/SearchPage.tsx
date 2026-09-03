@@ -7,7 +7,7 @@ import { Highlight } from '@/components/Highlight';
 import { Icon } from '@/components/Icon';
 import { PageHeader } from '@/layouts/PageHeader';
 import { nodeLabel, nodeShortLabel } from '@/lib/format';
-import { getLawIdForNode, getLawMeta, getNodePath } from '@/lib/lawIndex';
+import { getAllLaws, getLawIdForNode, getLawMeta, getNodePath } from '@/lib/lawIndex';
 import { searchAll, type SearchScope } from '@/lib/search';
 import { routes } from '@/navigation/routes';
 
@@ -17,12 +17,16 @@ const NODE_PAGE_SIZE = 30;
 export function SearchPage() {
   const [params, setParams] = useSearchParams();
   const initialQuery = params.get('q') ?? '';
+  const initialLaw = params.get('law') ?? 'all';
   const [inputValue, setInputValue] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+  const [selectedLawId, setSelectedLawId] = useState(initialLaw);
   const [scope, setScope] = useState<SearchScope>('all');
   const [visibleArticleCount, setVisibleArticleCount] = useState(ARTICLE_PAGE_SIZE);
   const [visibleNodeCount, setVisibleNodeCount] = useState(NODE_PAGE_SIZE);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const laws = useMemo(() => getAllLaws(), []);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -36,28 +40,51 @@ export function SearchPage() {
     return () => window.clearTimeout(timer);
   }, [inputValue]);
 
-  // รีเซ็ตการแบ่งหน้าเมื่อคำค้นหาเปลี่ยน
+  // รีเซ็ตการแบ่งหน้าเมื่อคำค้นหาหรือตัวกรองกฎหมายเปลี่ยน
   useEffect(() => {
     setVisibleArticleCount(ARTICLE_PAGE_SIZE);
     setVisibleNodeCount(NODE_PAGE_SIZE);
-  }, [debouncedQuery]);
+  }, [debouncedQuery, selectedLawId]);
 
-  // เก็บคำค้นไว้ใน URL อย่างปลอดภัย ไม่รบกวนจังหวะการพิมพ์
+  // เก็บคำค้นและตัวเลือกกฎหมายไว้ใน URL อย่างปลอดภัย ไม่รบกวนจังหวะการพิมพ์
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const trimmed = debouncedQuery.trim();
       const currentQ = params.get('q') ?? '';
-      if (trimmed !== currentQ) {
-        setParams(trimmed ? { q: trimmed } : {}, { replace: true });
+      const currentLaw = params.get('law') ?? 'all';
+      if (trimmed !== currentQ || selectedLawId !== currentLaw) {
+        const nextParams: Record<string, string> = {};
+        if (trimmed) nextParams.q = trimmed;
+        if (selectedLawId !== 'all') nextParams.law = selectedLawId;
+        setParams(nextParams, { replace: true });
       }
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [debouncedQuery, params, setParams]);
+  }, [debouncedQuery, selectedLawId, params, setParams]);
 
   // ใช้ deferred value เพื่อให้ React จัดการเรนเดอร์ผลลัพธ์เป็น non-blocking background task
   const deferredQuery = useDeferredValue(debouncedQuery);
-  const results = useMemo(() => searchAll(deferredQuery), [deferredQuery]);
+  const allResults = useMemo(() => searchAll(deferredQuery), [deferredQuery]);
   const trimmed = deferredQuery.trim();
+
+  // นับจำนวนผลลัพธ์แยกตามฉบับกฎหมาย
+  const countByLaw = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of allResults.articleItems) {
+      counts[item.lawId] = (counts[item.lawId] || 0) + 1;
+    }
+    for (const node of allResults.nodes) {
+      const lawId = getLawIdForNode(node.id);
+      counts[lawId] = (counts[lawId] || 0) + 1;
+    }
+    return counts;
+  }, [allResults]);
+
+  // ผลลัพธ์สำหรับฉบับกฎหมายที่เลือก (ถ้า 'all' ใช้ allResults โดยตรง)
+  const results = useMemo(() => {
+    if (selectedLawId === 'all') return allResults;
+    return searchAll(deferredQuery, selectedLawId);
+  }, [deferredQuery, selectedLawId, allResults]);
 
   const handleClear = useCallback(() => {
     setInputValue('');
@@ -74,6 +101,30 @@ export function SearchPage() {
   const visibleNodes = results.nodes.slice(0, visibleNodeCount);
   const hasMoreNodes = results.nodes.length > visibleNodeCount;
   const remainingNodes = results.nodes.length - visibleNodeCount;
+
+  const lawOptions = useMemo(
+    () => [
+      {
+        value: 'all',
+        label: `ทุกฉบับ${trimmed ? ` ${allResults.total}` : ''}`,
+      },
+      ...laws.map((law) => ({
+        value: law.id,
+        label: `${law.code}${trimmed && countByLaw[law.id] !== undefined ? ` ${countByLaw[law.id]}` : ''}`,
+      })),
+    ],
+    [laws, trimmed, allResults.total, countByLaw],
+  );
+
+  const scopeOptions = useMemo(
+    () => [
+      { value: 'all' as SearchScope, label: 'ทั้งหมด' },
+      { value: 'article' as SearchScope, label: `มาตรา${trimmed ? ` ${results.articleItems.length}` : ''}` },
+      { value: 'decision' as SearchScope, label: `ฎีกา${trimmed ? ` ${results.decisions.length}` : ''}` },
+      { value: 'node' as SearchScope, label: `สารบัญ${trimmed ? ` ${results.nodes.length}` : ''}` },
+    ],
+    [trimmed, results.articleItems.length, results.decisions.length, results.nodes.length],
+  );
 
   return (
     <>
@@ -105,17 +156,23 @@ export function SearchPage() {
         </div>
       </div>
 
-      <FilterChips
-        ariaLabel="กรองผลการค้นหา"
-        value={scope}
-        onChange={setScope}
-        options={[
-          { value: 'all', label: 'ทั้งหมด' },
-          { value: 'article', label: `มาตรา${trimmed ? ` ${results.articleItems.length}` : ''}` },
-          { value: 'decision', label: `ฎีกา${trimmed ? ` ${results.decisions.length}` : ''}` },
-          { value: 'node', label: `สารบัญ${trimmed ? ` ${results.nodes.length}` : ''}` },
-        ]}
-      />
+      <div className="search-filters">
+        {laws.length > 1 && (
+          <FilterChips
+            ariaLabel="กรองฉบับกฎหมาย"
+            value={selectedLawId}
+            onChange={setSelectedLawId}
+            options={lawOptions}
+          />
+        )}
+
+        <FilterChips
+          ariaLabel="กรองประเภทผลการค้นหา"
+          value={scope}
+          onChange={setScope}
+          options={scopeOptions}
+        />
+      </div>
 
       <main className="page">
         {!trimmed ? (

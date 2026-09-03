@@ -8,17 +8,23 @@ export function nodeLabel(node: Pick<IndexedLawNode, 'type' | 'number' | 'title'
   if (node.type === 'ข้อความเบื้องต้น') {
     return node.title ? `ข้อความเบื้องต้น ${node.title}`.trim() : 'ข้อความเบื้องต้น';
   }
+  if (!node.number) {
+    return node.title;
+  }
   const prefix = node.type === 'ส่วน' ? 'ส่วนที่' : node.type;
   return `${prefix} ${node.number} ${node.title}`.trim();
 }
 
 /** ป้ายสั้นสำหรับ breadcrumb เช่น "คำปรารภ" / "ข้อความเบื้องต้น" / "บรรพ 1" */
-export function nodeShortLabel(node: Pick<IndexedLawNode, 'type' | 'number'>): string {
+export function nodeShortLabel(node: Pick<IndexedLawNode, 'type' | 'number' | 'title'>): string {
   if (node.type === 'คำปรารภ') {
     return 'คำปรารภ';
   }
   if (node.type === 'ข้อความเบื้องต้น') {
     return 'ข้อความเบื้องต้น';
+  }
+  if (!node.number) {
+    return node.title || node.type;
   }
   return `${node.type} ${node.number}`;
 }
@@ -48,14 +54,14 @@ function parseSortKey(id: string): [number, number] {
   const main = Number(mainText) || 0;
   if (slashSub) return [main, Number(slashSub) || 0];
   if (word && ORDINAL_WORDS[word]) return [main, ORDINAL_WORDS[word]];
-  return [main, 1];
+  return [main, 0];
 }
 
 /** เรียงเลขมาตราแบบธรรมชาติ รองรับรูปแบบ "150", "1598/1", "1375 ทวิ" */
 export function compareArticleIds(a: string, b: string): number {
   const [aMain, aSub] = parseSortKey(a);
   const [bMain, bSub] = parseSortKey(b);
-  return aMain - bMain || aSub - bSub;
+  return aMain - bMain || aSub - bSub || a.localeCompare(b);
 }
 
 /** ตัดข้อความยาวสำหรับ preview */
