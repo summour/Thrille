@@ -6,9 +6,9 @@ import {
   getOrderedArticleIds,
 } from '@/lib/lawIndex';
 import { compareArticleIds, nodeLabel } from '@/lib/format';
-import type { Decision, IndexedLawNode } from '@/types/law';
+import type { Decision, IndexedLawNode, LawCodeMeta } from '@/types/law';
 
-export type SearchScope = 'all' | 'article' | 'decision' | 'node';
+export type SearchScope = 'all' | 'law' | 'article' | 'decision' | 'node';
 
 export interface SearchArticleItem {
   id: string;
@@ -16,6 +16,7 @@ export interface SearchArticleItem {
 }
 
 export interface SearchResults {
+  laws: LawCodeMeta[];
   articleIds: string[];
   articleItems: SearchArticleItem[];
   decisions: Decision[];
@@ -24,12 +25,42 @@ export interface SearchResults {
 }
 
 const EMPTY: SearchResults = {
+  laws: [],
   articleIds: [],
   articleItems: [],
   decisions: [],
   nodes: [],
   total: 0,
 };
+
+function normalizeText(text: string): string {
+  const thaiDigits = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
+  let res = text.toLowerCase().replace(/อัฎฐ/g, 'อัฏฐ');
+  for (let i = 0; i < 10; i++) {
+    res = res.replace(new RegExp(thaiDigits[i], 'g'), String(i));
+  }
+  return res;
+}
+
+function stripPunctuation(text: string): string {
+  return text.replace(/[.\s\-–—/()]/g, '');
+}
+
+function matchText(haystack: string, needle: string, needleClean: string): boolean {
+  if (!needle) return false;
+  const hLower = haystack.toLowerCase();
+  if (hLower.includes(needle)) return true;
+
+  const hNorm = normalizeText(haystack);
+  const nNorm = normalizeText(needle);
+  if (hNorm.includes(nNorm)) return true;
+
+  if (needleClean.length >= 2) {
+    const hClean = stripPunctuation(hNorm);
+    if (hClean.includes(needleClean)) return true;
+  }
+  return false;
+}
 
 function includes(haystack: string, needle: string): boolean {
   return haystack.toLowerCase().includes(needle);
@@ -72,7 +103,7 @@ function getCachedArticles(): SearchableArticle[] {
 
 /**
  * ค้นหาแบบ local ทั้งหมด (ไม่มี network)
- * รองรับ: เลขมาตรา / คำสำคัญในตัวบท / ชื่อบรรพ-ภาค-ลักษณะ-หมวด-ส่วน / เลขฎีกา
+ * รองรับ: ชื่อกฎหมาย / เลขมาตรา / คำสำคัญในตัวบท / ชื่อบรรพ-ภาค-ลักษณะ-หมวด-ส่วน / เลขฎีกา
  * สามารถระบุ lawId เพื่อจำกัดขอบเขต หรือค้นหาทุกกฎหมายได้
  */
 export function searchAll(rawQuery: string, lawId?: string): SearchResults {
@@ -80,6 +111,33 @@ export function searchAll(rawQuery: string, lawId?: string): SearchResults {
   if (!query) return EMPTY;
 
   const normalizedQuery = query.replace(/อัฎฐ/g, 'อัฏฐ');
+  const queryClean = stripPunctuation(normalizeText(query));
+  const allLaws = getAllLaws();
+
+  // ค้นหาชื่อกฎหมาย (ฉบับกฎหมาย / ชื่อย่อ / รหัส / คำอธิบาย)
+  const matchedLaws: { law: LawCodeMeta; score: number }[] = [];
+  for (const law of allLaws) {
+    if (lawId && law.id !== lawId) continue;
+
+    let score = 0;
+    if (
+      matchText(law.code, query, queryClean) ||
+      matchText(law.shortTitle, query, queryClean)
+    ) {
+      score = 3;
+    } else if (matchText(law.title, query, queryClean)) {
+      score = 2;
+    } else if (matchText(law.description, query, queryClean)) {
+      score = 1;
+    }
+
+    if (score > 0) {
+      matchedLaws.push({ law, score });
+    }
+  }
+  matchedLaws.sort((a, b) => b.score - a.score);
+  const matchedLawItems = matchedLaws.map((m) => m.law);
+
   const allArticles = getCachedArticles();
   const matchedArticles: { item: SearchArticleItem; score: number }[] = [];
 
@@ -107,8 +165,7 @@ export function searchAll(rawQuery: string, lawId?: string): SearchResults {
     }
   }
 
-  const laws = getAllLaws();
-  const lawOrderMap = new Map(laws.map((l, index) => [l.id, index]));
+  const lawOrderMap = new Map(allLaws.map((l, index) => [l.id, index]));
 
   // เรียงลำดับ: คะแนนความเกี่ยวข้องสูงกว่ามาก่อน -> ลำดับเลขมาตรา -> ลำดับฉบับกฎหมาย
   matchedArticles.sort((a, b) => {
@@ -138,10 +195,11 @@ export function searchAll(rawQuery: string, lawId?: string): SearchResults {
   );
 
   return {
+    laws: matchedLawItems,
     articleIds,
     articleItems,
     decisions,
     nodes,
-    total: articleIds.length + decisions.length + nodes.length,
+    total: matchedLawItems.length + articleIds.length + decisions.length + nodes.length,
   };
 }

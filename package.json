@@ -21,7 +21,11 @@
     "import:crpc": "tsx scripts/import.ts --law=crpc",
     "import:crpc:check": "tsx scripts/import.ts --law=crpc --check",
     "import:state-admin": "tsx scripts/import.ts --law=state-admin",
-    "import:state-admin:check": "tsx scripts/import.ts --law=state-admin --check"
+    "import:state-admin:check": "tsx scripts/import.ts --law=state-admin --check",
+    "import:labor-protection": "tsx scripts/import.ts --law=labor-protection",
+    "import:labor-protection:check": "tsx scripts/import.ts --law=labor-protection --check",
+    "import:civil-service": "tsx scripts/import.ts --law=civil-service",
+    "import:civil-service:check": "tsx scripts/import.ts --law=civil-service --check"
   },
   "dependencies": {
     "react": "^18.3.1",

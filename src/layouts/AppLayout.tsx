@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { TabBar } from '@/navigation/TabBar';
 
@@ -6,12 +6,51 @@ import { TabBar } from '@/navigation/TabBar';
 export function AppLayout() {
   const shellRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const [tabBarVisible, setTabBarVisible] = useState(true);
 
   useEffect(() => {
     if (shellRef.current) {
       shellRef.current.scrollTo(0, 0);
     }
+    setTabBarVisible(true);
   }, [location.pathname, location.search]);
+
+  // ตรวจจับการเลื่อนหน้าจอ: เลื่อนลง -> ซ่อน TabBar ไม่ให้บังเนื้อหา / เลื่อนขึ้นหรือแตะบนสุด -> แสดงกลับมา
+  useEffect(() => {
+    const el = shellRef.current;
+    if (!el) return;
+
+    let lastScrollTop = 0;
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+
+      window.requestAnimationFrame(() => {
+        const currentScrollTop = el.scrollTop;
+        const maxScroll = el.scrollHeight - el.clientHeight;
+        const delta = currentScrollTop - lastScrollTop;
+
+        // ขอบบนสุด หรือขอบล่างสุด -> แสดงแถบนำทางเสมอ
+        if (currentScrollTop <= 15 || currentScrollTop >= maxScroll - 25) {
+          setTabBarVisible(true);
+        } else if (delta > 6 && currentScrollTop > 35) {
+          // เลื่อนลงชัดเจน -> ซ่อนแท็บบาร์เพื่อไม่ให้บังสายตา
+          setTabBarVisible(false);
+        } else if (delta < -6) {
+          // เลื่อนขึ้น -> แสดงแท็บบาร์เพื่อเตรียมนำทาง
+          setTabBarVisible(true);
+        }
+
+        lastScrollTop = currentScrollTop;
+        ticking = false;
+      });
+    };
+
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // ป้องกันการดึงหน้าจอติดขอบ (iOS overscroll rubber-banding / pull-to-refresh) เพื่อให้ความรู้สึกเหมือน Native App
   useEffect(() => {
@@ -65,7 +104,7 @@ export function AppLayout() {
   return (
     <div className="app-shell" ref={shellRef}>
       <Outlet />
-      <TabBar />
+      <TabBar visible={tabBarVisible} />
     </div>
   );
 }

@@ -8,16 +8,24 @@ const TABS = [
   { to: routes.bookmarks, label: 'บันทึก', icon: 'bookmark' as const, end: false },
 ];
 
+interface TabBarProps {
+  visible?: boolean;
+}
+
 /**
  * แถบนำทางหลัก (mobile-first)
- * ซ่อนในหน้ามาตรา เพื่อเปิดพื้นที่ให้แถบ “ก่อนหน้า / ถัดไป” และลด visual clutter ระหว่างอ่าน
+ * ซ่อนในหน้ามาตรา และซ่อนอัตโนมัติเมื่อเลื่อนหน้าลง เพื่อไม่ให้บังเนื้อหา
  */
-export function TabBar() {
+export function TabBar({ visible = true }: TabBarProps) {
   const { pathname } = useLocation();
   if (pathname.startsWith('/article/')) return null;
 
   return (
-    <nav className="tabbar" aria-label="เมนูหลัก">
+    <nav
+      className={`tabbar${!visible ? ' tabbar--hidden' : ''}`}
+      aria-label="เมนูหลัก"
+      aria-hidden={!visible}
+    >
       {TABS.map((tab) => (
         <NavLink
           key={tab.to}
@@ -26,6 +34,7 @@ export function TabBar() {
           className="tabbar__item"
           aria-label={tab.label}
           title={tab.label}
+          tabIndex={visible ? 0 : -1}
         >
           <Icon name={tab.icon} size={22} />
         </NavLink>

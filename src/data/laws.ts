@@ -1,6 +1,8 @@
 import { adminProcArticles } from '@/data/adminProcArticles';
 import { adminProcTree } from '@/data/adminProcTree';
 import { articles as cccArticles } from '@/data/articles';
+import { civilServiceArticles } from '@/data/civilServiceArticles';
+import { civilServiceTree } from '@/data/civilServiceTree';
 import { codeTree as cccCodeTree } from '@/data/codeTree';
 import { constitutionArticles } from '@/data/constitutionArticles';
 import { constitutionTree } from '@/data/constitutionTree';
@@ -8,6 +10,8 @@ import { cpcArticles } from '@/data/cpcArticles';
 import { cpcTree } from '@/data/cpcTree';
 import { crpcArticles } from '@/data/crpcArticles';
 import { crpcTree } from '@/data/crpcTree';
+import { laborProtectionArticles } from '@/data/laborProtectionArticles';
+import { laborProtectionTree } from '@/data/laborProtectionTree';
 import { nhrcArticles } from '@/data/nhrcArticles';
 import { nhrcTree } from '@/data/nhrcTree';
 import { officialInfoArticles } from '@/data/officialInfoArticles';
@@ -167,6 +171,34 @@ const stateAdminMeta: LawCodeMeta = {
 };
 
 /* -------------------------------------------------------------------------- */
+/*       10. พระราชบัญญัติคุ้มครองแรงงาน (คุ้มครองแรงงาน)                    */
+/* -------------------------------------------------------------------------- */
+const laborProtectionMeta: LawCodeMeta = {
+  id: 'labor-protection',
+  code: 'คุ้มครองแรงงาน',
+  title: 'พระราชบัญญัติคุ้มครองแรงงาน พ.ศ. ๒๕๔๑',
+  shortTitle: 'พ.ร.บ.คุ้มครองแรงงาน',
+  description: 'กฎหมายว่าด้วยการคุ้มครองแรงงาน สิทธิหน้าที่นายจ้างลูกจ้าง เวลาทำงาน ค่าจ้าง ค่าล่วงเวลา ค่าชดเชย และความปลอดภัยในการทำงาน',
+  unitName: 'หมวด',
+  totalSections: 16,
+  totalArticles: Object.keys(laborProtectionArticles).length,
+};
+
+/* -------------------------------------------------------------------------- */
+/*       11. พระราชบัญญัติระเบียบข้าราชการพลเรือน (ข้าราชการพลเรือน)           */
+/* -------------------------------------------------------------------------- */
+const civilServiceMeta: LawCodeMeta = {
+  id: 'civil-service',
+  code: 'ข้าราชการพลเรือน',
+  title: 'พระราชบัญญัติระเบียบข้าราชการพลเรือน พ.ศ. ๒๕๕๑',
+  shortTitle: 'พ.ร.บ.ระเบียบข้าราชการพลเรือน',
+  description: 'กฎหมายว่าด้วยการจัดระเบียบข้าราชการพลเรือน คณะกรรมการ ก.พ., ก.พ.ค., การกำหนดตำแหน่ง การสรรหา บรรจุ แต่งตั้ง วินัย การอุทธรณ์ และการร้องทุกข์',
+  unitName: 'ลักษณะ',
+  totalSections: 5,
+  totalArticles: Object.keys(civilServiceArticles).length,
+};
+
+/* -------------------------------------------------------------------------- */
 /*                       Law Packages Registry                                */
 /* -------------------------------------------------------------------------- */
 export const lawPackages: Record<string, LawPackage> = {
@@ -220,6 +252,16 @@ export const lawPackages: Record<string, LawPackage> = {
     tree: stateAdminTree,
     articles: stateAdminArticles,
   },
+  'labor-protection': {
+    meta: laborProtectionMeta,
+    tree: laborProtectionTree,
+    articles: laborProtectionArticles,
+  },
+  'civil-service': {
+    meta: civilServiceMeta,
+    tree: civilServiceTree,
+    articles: civilServiceArticles,
+  },
 };
 
 export const defaultLawId = 'ccc';
@@ -235,4 +277,6 @@ export const allLawMetas: LawCodeMeta[] = [
   nhrcMeta,
   tortLiabilityMeta,
   stateAdminMeta,
+  laborProtectionMeta,
+  civilServiceMeta,
 ];

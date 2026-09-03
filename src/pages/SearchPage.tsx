@@ -5,7 +5,6 @@ import { DecisionRow } from '@/components/DecisionRow';
 import { FilterChips } from '@/components/FilterChips';
 import { Highlight } from '@/components/Highlight';
 import { Icon } from '@/components/Icon';
-import { PageHeader } from '@/layouts/PageHeader';
 import { nodeLabel, nodeShortLabel } from '@/lib/format';
 import { getAllLaws, getLawIdForNode, getLawMeta, getNodePath } from '@/lib/lawIndex';
 import { searchAll, type SearchScope } from '@/lib/search';
@@ -70,6 +69,9 @@ export function SearchPage() {
   // นับจำนวนผลลัพธ์แยกตามฉบับกฎหมาย
   const countByLaw = useMemo(() => {
     const counts: Record<string, number> = {};
+    for (const law of allResults.laws) {
+      counts[law.id] = (counts[law.id] || 0) + 1;
+    }
     for (const item of allResults.articleItems) {
       counts[item.lawId] = (counts[item.lawId] || 0) + 1;
     }
@@ -119,65 +121,71 @@ export function SearchPage() {
   const scopeOptions = useMemo(
     () => [
       { value: 'all' as SearchScope, label: 'ทั้งหมด' },
+      { value: 'law' as SearchScope, label: `ชื่อกฎหมาย${trimmed ? ` ${results.laws.length}` : ''}` },
       { value: 'article' as SearchScope, label: `มาตรา${trimmed ? ` ${results.articleItems.length}` : ''}` },
       { value: 'decision' as SearchScope, label: `ฎีกา${trimmed ? ` ${results.decisions.length}` : ''}` },
       { value: 'node' as SearchScope, label: `สารบัญ${trimmed ? ` ${results.nodes.length}` : ''}` },
     ],
-    [trimmed, results.articleItems.length, results.decisions.length, results.nodes.length],
+    [trimmed, results.laws.length, results.articleItems.length, results.decisions.length, results.nodes.length],
   );
 
   return (
     <>
-      <PageHeader title="ค้นหา" showBack={false} />
-
-      <div className="search-bar">
-        <div className="search-bar__inner">
-          <input
-            ref={inputRef}
-            type="search"
-            value={inputValue}
-            onChange={(event) => setInputValue(event.target.value)}
-            placeholder="เลขมาตรา · คำสำคัญ · ชื่อหมวด/ส่วน · เลขฎีกา"
-            aria-label="ช่องค้นหา"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck="false"
-          />
-          {inputValue ? (
-            <button
-              type="button"
-              className="search-bar__clear"
-              onClick={handleClear}
-              aria-label="ล้างข้อความค้นหา"
-            >
-              <Icon name="close" size={13} />
-            </button>
-          ) : null}
+      <div className="search-header-sticky">
+        <div className="search-bar">
+          <div className="search-bar__inner">
+            <span className="search-bar__icon" aria-hidden="true">
+              <Icon name="search" size={16} />
+            </span>
+            <input
+              ref={inputRef}
+              type="search"
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+              placeholder="ชื่อกฎหมาย · เลขมาตรา · คำสำคัญ · หมวด/ส่วน · ฎีกา"
+              aria-label="ช่องค้นหา"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck="false"
+            />
+            {inputValue ? (
+              <button
+                type="button"
+                className="search-bar__clear"
+                onClick={handleClear}
+                aria-label="ล้างข้อความค้นหา"
+              >
+                <Icon name="close" size={13} />
+              </button>
+            ) : null}
+          </div>
         </div>
-      </div>
 
-      <div className="search-filters">
-        {laws.length > 1 && (
+        <div className="search-filters">
+          {laws.length > 1 && (
+            <FilterChips
+              ariaLabel="กรองฉบับกฎหมาย"
+              value={selectedLawId}
+              onChange={setSelectedLawId}
+              options={lawOptions}
+            />
+          )}
+
           <FilterChips
-            ariaLabel="กรองฉบับกฎหมาย"
-            value={selectedLawId}
-            onChange={setSelectedLawId}
-            options={lawOptions}
+            ariaLabel="กรองประเภทผลการค้นหา"
+            value={scope}
+            onChange={setScope}
+            options={scopeOptions}
           />
-        )}
-
-        <FilterChips
-          ariaLabel="กรองประเภทผลการค้นหา"
-          value={scope}
-          onChange={setScope}
-          options={scopeOptions}
-        />
+        </div>
       </div>
 
       <main className="page">
         {!trimmed ? (
           <p className="note note--hint">
             ค้นหาได้จาก
+            <br />
+            <b>ชื่อกฎหมาย</b> เช่น ข้าราชการพลเรือน, คุ้มครองแรงงาน, รัฐธรรมนูญ, ป.พ.พ.
             <br />
             <b>เลขมาตรา</b> เช่น 150, 288, 55
             <br />
@@ -191,6 +199,42 @@ export function SearchPage() {
           <p className="note">ไม่พบผลลัพธ์สำหรับ “{trimmed}”</p>
         ) : (
           <>
+            {show('law') && results.laws.length > 0 && (
+              <>
+                <p className="eyebrow">ฉบับกฎหมาย · {results.laws.length}</p>
+                <div className="law-box-list" role="list">
+                  {results.laws.map((law) => (
+                    <Link
+                      key={law.id}
+                      to={routes.toc(law.id)}
+                      className="law-box"
+                      role="listitem"
+                    >
+                      <div className="law-box__main">
+                        <div className="law-box__top">
+                          <span className="law-box__badge">
+                            <Highlight text={law.code} query={trimmed} />
+                          </span>
+                          <span className="law-box__title">
+                            <Highlight text={law.title} query={trimmed} />
+                          </span>
+                        </div>
+                        <p className="law-box__desc">
+                          <Highlight text={law.description} query={trimmed} />
+                        </p>
+                        <div className="law-box__meta">
+                          {law.totalSections} {law.unitName} · {law.totalArticles.toLocaleString('th-TH')} มาตรา
+                        </div>
+                      </div>
+                      <div className="law-box__arrow">
+                        <Icon name="chevronRight" size={18} />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+
             {show('article') && results.articleItems.length > 0 && (
               <>
                 <p className="eyebrow">มาตรา · {results.articleItems.length}</p>

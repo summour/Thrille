@@ -90,6 +90,31 @@ const LAW_CONFIGS: Record<string, LawConfig> = {
       หมวด: 1,
     },
   },
+  'labor-protection': {
+    id: 'labor-protection',
+    name: '[คุ้มครองแรงงาน] พระราชบัญญัติคุ้มครองแรงงาน พ.ศ. ๒๕๔๑',
+    rawDir: join(ROOT, 'data-source', 'labor-protection', 'raw'),
+    outDir: join(ROOT, 'src', 'data', 'generated-labor-protection'),
+    manifest: join(ROOT, 'data-source', 'labor-protection', 'manifest.json'),
+    hasFootnotesAtEnd: true,
+    levelDepth: {
+      หมวด: 0,
+      ส่วน: 1,
+    },
+  },
+  'civil-service': {
+    id: 'civil-service',
+    name: '[ข้าราชการพลเรือน] พระราชบัญญัติระเบียบข้าราชการพลเรือน พ.ศ. ๒๕๕๑',
+    rawDir: join(ROOT, 'data-source', 'civil-service', 'raw'),
+    outDir: join(ROOT, 'src', 'data', 'generated-civil-service'),
+    manifest: join(ROOT, 'data-source', 'civil-service', 'manifest.json'),
+    hasFootnotesAtEnd: true,
+    levelDepth: {
+      ลักษณะ: 0,
+      หมวด: 1,
+      ส่วน: 2,
+    },
+  },
 };
 
 const args = process.argv.slice(2);
